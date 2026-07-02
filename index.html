@@ -1161,41 +1161,37 @@ function switchTab(tab){
 
 /* ============================================================
    월간일지 자동요약 - 인원 한 명의 "이번 달 전체" 업무를 한 문단으로 압축해서 만들어줌
-   (주간정리처럼 "1건씩" 나열하지 않고, 한 달 전체를 문장 몇 개로 더 압축한 형태)
+   [수정됨] 주간정리와 같은 이유로 "평균 진행률"을 없애고, 같은 이름의 항목을
+   찾아서 그 달에 가장 마지막(최근 날짜)으로 입력된 진행률만 항목별로 보여주도록 바꿨습니다.
    ============================================================ */
 function computeMonthlySummary(empId){
   const totalDays = daysInMonth(currentYear, currentMonth);
-  let count = 0;          // 이번 달 전체 입력 항목 개수
-  let progressSum = 0;    // 진행률이 입력된 항목들의 합계
-  let progressCount = 0;  // 진행률이 입력된 항목 개수
-  let leaveDays = 0;      // 연차/휴가 단어가 포함된 날짜 수
+  let totalCount = 0; // 이번 달 전체 입력 항목 개수 (요약할 내용이 있는지 판단용)
+
+  // 항목 이름(예: "링스1") -> 그 달에 가장 최근에 입력된 진행률.
+  // 주간정리와 동일한 방식: 날짜가 이른 것부터 순서대로 훑으며 값을 계속 덮어써서
+  // 결과적으로 "이번 달 마지막으로 입력한 값"만 남게 됨.
+  const progressByLabel = new Map();
 
   // 이번 달 1일부터 말일까지 하루하루 돌면서 데이터를 모음
   for(let d = 1; d <= totalDays; d++){
     const dateStr = toDateStr(new Date(currentYear, currentMonth-1, d));
     const items = logsByEmpDate[`${empId}_${dateStr}`] || [];
-    count += items.length;
-    let dayHasLeave = false;
+    totalCount += items.length;
     items.forEach(it => {
-      if(it.progress !== null && it.progress !== undefined){
-        progressSum += it.progress; progressCount++;
-      }
-      if(containsLeaveKeyword(it.content)) dayHasLeave = true;
+      if(it.progress === null || it.progress === undefined) return; // 진행률 없는 항목은 건너뜀
+      const label = (it.content || '').trim();
+      if(!label) return;
+      progressByLabel.set(label, it.progress);
     });
-    if(dayHasLeave) leaveDays++;
   }
 
-  if(count === 0) return '이번 달 입력된 업무가 없습니다.';
+  if(totalCount === 0) return '이번 달 입력된 업무가 없습니다.';
+  if(progressByLabel.size === 0) return `이번 달 총 ${totalCount}건의 업무를 입력했습니다. (진행률 입력 없음)`;
 
-  // 문장 여러 개를 이어 붙여서 "한 문단"으로 만듦
-  let text = `이번 달 총 ${count}건의 업무를 입력했습니다.`;
-  if(progressCount > 0){
-    text += ` 진행률이 입력된 항목의 평균 진행률은 ${Math.round(progressSum/progressCount)}%입니다.`;
-  }
-  if(leaveDays > 0){
-    text += ` 연차·휴가는 총 ${leaveDays}일 사용했습니다.`;
-  }
-  return text;
+  // 항목별 "이름 진행률%" 을 콤마로 이어붙여서 한 문장으로 압축
+  const parts = Array.from(progressByLabel.entries()).map(([label, pct]) => `${label} ${pct}%`);
+  return `이번 달 항목별 최종 진행률은 ${parts.join(', ')}입니다.`;
 }
 
 // 월간일지 탭 안에, 인원별로 카드를 하나씩 만들어서 채워 넣는 함수
