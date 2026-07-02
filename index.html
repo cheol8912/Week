@@ -750,6 +750,23 @@ function containsLeaveKeyword(text){
   return LEAVE_KEYWORDS.some(k => text.includes(k));
 }
 
+// [추가됨] 항목 하나(타이틀+내용+진행률)를 화면에 보여줄 "표시용 글자"로 만들어주는 함수.
+// - 타이틀과 내용이 둘 다 있으면 "타이틀: 내용" (예: "A: 모델링")
+// - 타이틀만 있으면 타이틀만 (예: "A")
+// - 타이틀 없이 내용만 있는 예전 데이터는 내용만 (예전 방식과 호환됨)
+function itemDisplayLabel(it){
+  const title = (it.title || '').trim();
+  const content = (it.content || '').trim();
+  if(title && content) return `${title}: ${content}`;
+  if(title) return title;
+  return content;
+}
+
+// [추가됨] "연차/휴가" 같은 키워드를 검사할 때, 타이틀과 내용 둘 다에서 찾도록 합쳐주는 함수
+function itemSearchText(it){
+  return `${it.title || ''} ${it.content || ''}`;
+}
+
 // 화면 하단에 잠깐 뜨는 알림 메시지(토스트)를 보여주는 함수
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -974,7 +991,7 @@ function renderBody(){
     employees.forEach(emp => {
       const key = `${emp.id}_${dateStr}`;
       const items = logsByEmpDate[key] || [];
-      const hasLeave = items.some(it => containsLeaveKeyword(it.content)); // 휴가 관련 단어가 있는지 검사
+      const hasLeave = items.some(it => containsLeaveKeyword(itemSearchText(it))); // 타이틀+내용 모두에서 휴가 관련 단어 검사
 
       const td = document.createElement('td');
       // 'is-leave' 글자가 class에 들어가면 위쪽 CSS의 .day-cell.is-leave 규칙(살구색 배경)이 적용됨
@@ -986,12 +1003,16 @@ function renderBody(){
         td.innerHTML = `<div class="empty-hint">+ 항목 추가</div>`;
       } else {
         const shown = items.slice(0, 2); // 칸 안에는 최대 2개 항목만 미리보기로 보여줌
-        let html = shown.map(it => `
+        // ★ "타이틀: 내용" 형식으로 표시 (itemDisplayLabel 함수가 조합해줌). 팝업을 열면 타이틀/내용을 각각 볼 수 있음
+        let html = shown.map(it => {
+          const label = itemDisplayLabel(it);
+          return `
           <div class="log-item">
             <span class="dot">·</span>
-            <span class="txt" title="${escapeHtml(it.content)}">${escapeHtml(it.content)}</span>
+            <span class="txt" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
             ${it.progress !== null && it.progress !== undefined ? `<span class="pct">${it.progress}%</span>` : ''}
-          </div>`).join('');
+          </div>`;
+        }).join('');
         if(items.length > 2){
           html += `<div class="more-link">+${items.length - 2}개 더보기</div>`;
         }
@@ -1046,7 +1067,9 @@ function computeAutoSummary(empId, weekStartDate){
     totalCount += items.length;
     items.forEach(it => {
       if(it.progress === null || it.progress === undefined) return; // 진행률 없는 항목은 건너뜀
-      const label = (it.content || '').trim(); // 항목 이름 = 업무 내용 글자 그대로 (예: "링스1")
+      // [수정됨] 항목을 묶는 기준이 "내용" 전체 글자가 아니라 "타이틀"로 바뀜.
+      // 타이틀이 없는 예전 데이터는 내용으로 대신 묶음(호환용).
+      const label = (it.title || it.content || '').trim();
       if(!label) return;
       progressByLabel.set(label, it.progress);
     });
@@ -1180,7 +1203,8 @@ function computeMonthlySummary(empId){
     totalCount += items.length;
     items.forEach(it => {
       if(it.progress === null || it.progress === undefined) return; // 진행률 없는 항목은 건너뜀
-      const label = (it.content || '').trim();
+      // [수정됨] 주간정리와 동일하게, 타이틀 기준으로 항목을 묶음 (예전 데이터는 내용으로 대신 묶음)
+      const label = (it.title || it.content || '').trim();
       if(!label) return;
       progressByLabel.set(label, it.progress);
     });
@@ -1277,13 +1301,17 @@ function openDayModal(emp, date){
   let items = JSON.parse(JSON.stringify(logsByEmpDate[key] || []));
   if(items.length === 0){
     // 항목이 하나도 없으면, 버튼을 또 누를 필요 없이 바로 빈 입력창을 하나 보여줌
-    items.push({ content: '', progress: null, _isNew: true });
+    items.push({ title: '', content: '', progress: null, _isNew: true });
   }
 
   const dowLabel = DOW_LABELS[(date.getDay()+6)%7];
   const title = `${emp.name} · ${date.getMonth()+1}.${date.getDate()}(${dowLabel})`; // 팝업 맨 위 제목 글자
 
-  // 항목 목록(item-row들)을 HTML 글자로 만들어주는 함수
+  // 항목 목록(item-row들)을 HTML 글자로 만들어주는 함수.
+  // [수정됨] "내용" 하나뿐이던 입력창을 "타이틀"과 "내용" 두 개로 나눔.
+  // - 타이틀: 짧은 이름 (예: "A", "링스1") - 날짜가 달라도 같은 항목이면 이 이름을 똑같이 적어주면
+  //           주간정리/월간정리가 이 이름을 기준으로 최신 진행률을 모아서 보여줌
+  // - 내용: 그날그날 달라도 되는 상세 설명 (예: "모델링", "도면 작업")
   function itemsHtml(){
     if(items.length === 0){
       return `<div class="hint-text" style="margin-bottom:10px;">아직 입력된 항목이 없습니다.</div>`;
@@ -1292,8 +1320,12 @@ function openDayModal(emp, date){
       <div class="item-row" data-idx="${idx}">
         <button class="item-remove" data-remove="${idx}" title="삭제">✕</button>
         <div class="field">
+          <label>타이틀</label>
+          <input type="text" data-field="title" data-idx="${idx}" value="${escapeHtml(it.title || '')}" placeholder="예: A, 링스1" />
+        </div>
+        <div class="field">
           <label>내용</label>
-          <textarea data-field="content" data-idx="${idx}">${escapeHtml(it.content)}</textarea>
+          <textarea data-field="content" data-idx="${idx}">${escapeHtml(it.content || '')}</textarea>
         </div>
         <div class="field" style="max-width:120px;">
           <label>진행률 (%)</label>
@@ -1309,7 +1341,7 @@ function openDayModal(emp, date){
     bodyHtml: `
       <div id="itemsContainer">${itemsHtml()}</div>
       <button class="add-item-btn" id="addItemBtn">+ 항목 추가</button>
-      <div class="hint-text">내용에 "연차 / 휴가 / 반차"가 포함되면 해당 날짜 칸이 자동으로 표시됩니다.</div>
+      <div class="hint-text">타이틀 또는 내용에 "연차 / 휴가 / 반차"가 포함되면 해당 날짜 칸이 자동으로 표시됩니다.</div>
     `,
     footerHtml: `
       <button class="btn" id="cancelDayBtn">취소</button>
@@ -1318,7 +1350,7 @@ function openDayModal(emp, date){
     onMount: (close) => {
       bindItemEvents();
       document.getElementById('addItemBtn').addEventListener('click', () => {
-        items.push({ content: '', progress: null, _isNew: true });
+        items.push({ title: '', content: '', progress: null, _isNew: true });
         refreshItemsContainer();
       });
       document.getElementById('cancelDayBtn').addEventListener('click', close);
@@ -1329,8 +1361,11 @@ function openDayModal(emp, date){
     }
   });
 
-  // 항목 입력창(내용/진행률)에 글자를 입력하거나, 삭제 버튼을 누를 때 반응하도록 이벤트를 연결
+  // 항목 입력창(타이틀/내용/진행률)에 글자를 입력하거나, 삭제 버튼을 누를 때 반응하도록 이벤트를 연결
   function bindItemEvents(){
+    document.querySelectorAll('[data-field="title"]').forEach(el => {
+      el.addEventListener('input', () => { items[el.dataset.idx].title = el.value; });
+    });
     document.querySelectorAll('[data-field="content"]').forEach(el => {
       el.addEventListener('input', () => { items[el.dataset.idx].content = el.value; });
     });
@@ -1357,8 +1392,10 @@ function openDayModal(emp, date){
 
   // [기능] "저장" 버튼을 눌렀을 때: 해당 인원/날짜의 기존 항목을 전부 지우고, 새 목록을 다시 저장함
   // (가장 단순하고 안전한 방식 - 항목이 몇 개든 통째로 지웠다가 다시 넣음)
+  // [수정됨] 이제 "타이틀"이 항목을 구분하는 핵심 이름표이므로, 타이틀이 비어있는 항목은 저장하지 않음.
+  //          (내용은 그날그날 비어있어도 괜찮도록 허용함)
   async function persistDay() {
-    const validItems = items.filter(it => it.content.trim() !== ''); // 내용이 빈 항목은 저장하지 않음
+    const validItems = items.filter(it => (it.title || '').trim() !== '');
     try {
       await sb(`work_logs?employee_id=eq.${emp.id}&log_date=eq.${dateStr}`, 'DELETE'); // 기존 항목 전체 삭제
 
@@ -1366,9 +1403,10 @@ function openDayModal(emp, date){
         const payload = validItems.map((it, i) => ({
           employee_id: emp.id,
           log_date: dateStr,
-          content: it.content.trim(),
+          title: it.title.trim(),
+          content: (it.content || '').trim() || null,
           progress: it.progress,
-          sort_order: i // 이 순서 번호가 주간정리 등에서 "몇 번째 항목인지" 판단하는 기준이 됨
+          sort_order: i // 이 순서 번호가 항목이 화면에 나열되는 순서를 정함
         }));
         await sb('work_logs', 'POST', payload); // 새 항목들을 한꺼번에 저장
       }
