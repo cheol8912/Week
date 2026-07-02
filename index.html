@@ -24,7 +24,7 @@
     --ink:#1A2332;
     --muted:#64748B;
     --amber:#B9781F;
-    --amber-bg:#FDF6EC; /* 기존 #FBEEDA 에서 더 밝게 화사한 톤으로 수정 */
+    --amber-bg:#FDF6EC; 
     --amber-line:#E8C08B;
     --danger:#C0392B;
     --radius:10px;
@@ -150,10 +150,9 @@
   }
   .day-cell-label .dow{ display:block; font-size:11px; color:var(--muted); font-weight:500; margin-top:1px; }
   
-  /* 주말 색상 변경 (휴가와 동일하게 처리, 날짜 라벨칸 포함) */
   tr.weekend .day-cell-label{ color:var(--muted); }
-  tr.weekend td { background:var(--amber-bg); } /* 날짜 칸(.day-label-col)까지 포함하여 배경색 적용 */
-  tr.weekend td.day-cell:hover{ background:#FBEEDA; } /* 호버 시 색상도 밝게 수정 */
+  tr.weekend td { background:var(--amber-bg); }
+  tr.weekend td.day-cell:hover{ background:#FBEEDA; }
 
   tr.is-today .day-label-col{ background:var(--blueprint); color:#fff; }
   tr.is-today .day-cell-label{ color:#fff; }
@@ -165,7 +164,7 @@
   }
   .day-cell:hover{ background:var(--blueprint-bg); }
   .day-cell.is-leave{ background:var(--amber-bg); }
-  .day-cell.is-leave:hover{ background:#FBEEDA; } /* 호버 시 색상 밝게 수정 */
+  .day-cell.is-leave:hover{ background:#FBEEDA; }
 
   .log-item{
     font-size:12.5px; line-height:1.5; margin-bottom:4px;
@@ -326,7 +325,7 @@
         </tr>
       </thead>
       <tbody id="gridBody">
-        </tbody>
+      </tbody>
     </table>
   </div>
 </main>
@@ -829,4 +828,152 @@ function openDayModal(emp, date){
     });
     document.querySelectorAll('[data-remove]').forEach(el => {
       el.addEventListener('click', () => {
-        items.splice(Number(el.dataset.remove),
+        // [수정된 부분] 삭제 기능 완성
+        items.splice(Number(el.dataset.remove), 1);
+        refreshItemsContainer();
+      });
+    });
+  }
+
+  function refreshItemsContainer() {
+    document.getElementById('itemsContainer').innerHTML = itemsHtml();
+    bindItemEvents();
+  }
+
+  // [추가된 부분] 업무 저장 기능 완성
+  async function persistDay() {
+    const validItems = items.filter(it => it.content.trim() !== '');
+    try {
+      // 해당 인원/날짜의 기존 항목 전체 삭제 후 새로 삽입
+      await sb(`work_logs?employee_id=eq.${emp.id}&log_date=eq.${dateStr}`, 'DELETE');
+      
+      if (validItems.length > 0) {
+        const payload = validItems.map((it, i) => ({
+          employee_id: emp.id,
+          log_date: dateStr,
+          content: it.content.trim(),
+          progress: it.progress,
+          sort_order: i
+        }));
+        await sb('work_logs', 'POST', payload);
+      }
+      
+      // 로컬 상태 갱신
+      logsByEmpDate[key] = validItems.length > 0 ? validItems : null;
+      render();
+      showToast('저장되었습니다.');
+    } catch(e) {
+      console.error(e);
+      showToast('저장 실패');
+    }
+  }
+}
+
+/* ============================================================
+   모달: 인원 관리 (수정 및 삭제)
+   ============================================================ */
+function openEmployeeMenu(emp) {
+  openModal({
+    title: '인원 관리',
+    bodyHtml: `
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="empNameEdit" value="${escapeHtml(emp.name)}" />
+      </div>
+      <div class="field">
+        <label>직책</label>
+        <input type="text" id="empPosEdit" value="${escapeHtml(emp.position || '')}" />
+      </div>
+    `,
+    footerHtml: `
+      <button class="btn danger" id="deleteEmpBtn" style="margin-right:auto;">삭제</button>
+      <button class="btn" id="cancelEmpBtn">취소</button>
+      <button class="btn primary" id="saveEmpBtn">저장</button>
+    `,
+    onMount: (close) => {
+      document.getElementById('cancelEmpBtn').addEventListener('click', close);
+      document.getElementById('saveEmpBtn').addEventListener('click', async () => {
+        const name = document.getElementById('empNameEdit').value.trim();
+        const pos = document.getElementById('empPosEdit').value.trim();
+        if (!name) return showToast('이름을 입력하세요');
+        try {
+          await sb(`employees?id=eq.${emp.id}`, 'PATCH', { name, position: pos });
+          await refreshAll();
+          close();
+        } catch(e) { console.error(e); showToast('저장 실패'); }
+      });
+      document.getElementById('deleteEmpBtn').addEventListener('click', async () => {
+        if(!confirm('정말 삭제하시겠습니까?')) return;
+        try {
+          await sb(`employees?id=eq.${emp.id}`, 'DELETE');
+          await refreshAll();
+          close();
+        } catch(e) { console.error(e); showToast('삭제 실패'); }
+      });
+    }
+  });
+}
+
+/* ============================================================
+   초기화 및 이벤트 리스너 바인딩
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // 월 이동 버튼 리스너
+  document.getElementById('prevYearBtn').addEventListener('click', () => { currentYear--; refreshAll(); });
+  document.getElementById('nextYearBtn').addEventListener('click', () => { currentYear++; refreshAll(); });
+  document.getElementById('prevMonthBtn').addEventListener('click', () => {
+    currentMonth--; 
+    if(currentMonth < 1) { currentMonth = 12; currentYear--; } 
+    refreshAll();
+  });
+  document.getElementById('nextMonthBtn').addEventListener('click', () => {
+    currentMonth++; 
+    if(currentMonth > 12) { currentMonth = 1; currentYear++; } 
+    refreshAll();
+  });
+  document.getElementById('todayBtn').addEventListener('click', () => {
+    currentYear = TODAY.getFullYear(); 
+    currentMonth = TODAY.getMonth() + 1; 
+    refreshAll();
+  });
+
+  // 인원 추가 버튼
+  document.getElementById('addEmployeeBtn').addEventListener('click', () => {
+    openModal({
+      title: '인원 추가',
+      bodyHtml: `
+        <div class="field">
+          <label>이름</label>
+          <input type="text" id="newEmpName" placeholder="홍길동" />
+        </div>
+        <div class="field">
+          <label>직책</label>
+          <input type="text" id="newEmpPos" placeholder="연구원" />
+        </div>
+      `,
+      footerHtml: `
+        <button class="btn" id="cancelAddEmpBtn">취소</button>
+        <button class="btn primary" id="saveAddEmpBtn">추가</button>
+      `,
+      onMount: (close) => {
+        document.getElementById('cancelAddEmpBtn').addEventListener('click', close);
+        document.getElementById('saveAddEmpBtn').addEventListener('click', async () => {
+          const name = document.getElementById('newEmpName').value.trim();
+          const pos = document.getElementById('newEmpPos').value.trim();
+          if (!name) return showToast('이름을 입력하세요');
+          try {
+            await sb('employees', 'POST', { name, position: pos, sort_order: employees.length, active: true });
+            await refreshAll();
+            close();
+          } catch(e) { console.error(e); showToast('추가 실패'); }
+        });
+      }
+    });
+  });
+
+  // 첫 데이터 로딩
+  refreshAll();
+});
+</script>
+</body>
+</html>
