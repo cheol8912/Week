@@ -187,6 +187,7 @@
     gap:10px; margin-bottom:14px;
   }
   .toolbar-nav .nav-group{ display:flex; align-items:center; gap:8px; } /* «, 연도, », ‹, 월, ›, 오늘 을 묶는 그룹 */
+  .toolbar-nav .right-group{ display:flex; align-items:center; gap:8px; } /* 새로고침 + 인원 추가 버튼을 묶는 그룹 (오른쪽) */
 
   /* «(이전 해) »(다음 해) ‹(이전 달) ›(다음 달) 버튼 하나하나의 모양 - 이제 흰 배경 위에 있으므로 밝은 테마로 변경 */
   .toolbar-nav button.nav-btn{
@@ -224,6 +225,22 @@
     font-family:var(--sans);
   }
   .toolbar-nav .today-btn:hover{ background:var(--blueprint-bg); }
+
+  /* ★ 새로고침 버튼 - 부드러운 분홍색 테두리+글자, 배경은 아주 연한 분홍 (은은한 느낌) */
+  .refresh-btn{
+    background:#FDF1F5;     /* 버튼 배경 = 아주 연한 분홍색 */
+    color:#D6558C;           /* 글자/아이콘 색 = 부드러운 분홍색 */
+    border:1px solid #F3C4D6; /* 테두리 = 연한 분홍색 선 */
+    font-size:13px;           /* "+ 인원 추가" 버튼과 동일한 글자 크기로 통일 */
+    padding:8px 14px;         /* "+ 인원 추가" 버튼과 동일한 크기(여백)로 통일 */
+    border-radius:7px;
+    cursor:pointer;
+    font-family:var(--sans);
+    font-weight:600;
+    display:inline-flex; align-items:center; gap:4px;
+    transition:background .15s;
+  }
+  .refresh-btn:hover{ background:#FBE4ED; } /* 마우스 올리면 배경이 살짝 더 진한 분홍으로 */
 
   /* "+ 인원 추가" 버튼 - 파란 꽉찬 버튼 (흰 배경 위에서도 그대로 잘 보임) */
   .add-employee-btn{
@@ -587,8 +604,15 @@
       <button class="today-btn" id="todayBtn">오늘</button>
     </div>
 
-    <!-- 새 인원을 추가하는 버튼 -->
-    <button class="add-employee-btn" id="addEmployeeBtn">+ 인원 추가</button>
+    <!-- 오른쪽 그룹: 새로고침 버튼 + 인원 추가 버튼을 나란히 묶음 -->
+    <div class="right-group">
+      <!-- ★ 새로고침 버튼 - 누르면 서버에서 데이터를 다시 불러와 화면을 최신 상태로 갱신함.
+           부드러운 분홍색 계열로 스타일을 줌 (CSS의 .refresh-btn 규칙 참고) -->
+      <button class="refresh-btn" id="refreshBtn" title="서버에서 최신 데이터를 다시 불러옵니다">↻ 새로고침</button>
+
+      <!-- 새 인원을 추가하는 버튼 -->
+      <button class="add-employee-btn" id="addEmployeeBtn">+ 인원 추가</button>
+    </div>
   </div>
 
   <!-- ============================================================
@@ -999,34 +1023,43 @@ function renderBody(){
 }
 
 // 한 주(週) 동안의 업무 내용을 바탕으로 "자동 요약 글자"를 만들어내는 함수.
-// 예: "총 5건 입력 · 평균 진행률 42% · 연차/휴가 1일"
+// [수정됨] 예전에는 "평균 진행률"을 계산했지만, 이건 서로 다른 항목들의 %를 억지로
+// 섞어 평균 내는 것이라 의미가 없다는 피드백을 받아 완전히 바꿨습니다.
+// 이제는 "같은 이름의 항목"을 찾아서, 그 주에 마지막으로(가장 최근 날짜에) 입력된
+// 진행률 하나만 항목별로 한 줄씩 보여줍니다.
+// 예) 1일에 "링스1 5%, 링스2 10%"를 적고, 2일에 "링스1 5%, 링스2 5%"를 적었다면
+//     -> 주간정리에는 "링스1 5%" "링스2 5%" 처럼 각 항목의 "가장 마지막 값"만 표시됩니다.
+//     (10% -> 5%로 수정된 것처럼, 나중에 다시 생각해서 값이 바뀌어도 최신 값이 우선합니다)
 function computeAutoSummary(empId, weekStartDate){
-  let count = 0;          // 이번 주에 입력된 전체 항목 개수
-  let progressSum = 0;    // 진행률이 입력된 항목들의 진행률 합계 (평균 계산용)
-  let progressCount = 0;  // 진행률이 입력된 항목의 개수
-  let leaveDays = 0;      // 연차/휴가 단어가 포함된 날짜의 개수
+  let totalCount = 0; // 이번 주에 입력된 전체 항목 개수 (요약할 내용이 있는지 판단용)
+
+  // 항목 이름(예: "링스1") -> 그 이름으로 가장 최근에 입력된 진행률.
+  // Map을 쓰는 이유: 같은 이름이 여러 번 나와도 "먼저 등장한 순서"는 그대로 유지하면서
+  // 값(진행률)만 나중 날짜 것으로 계속 덮어쓸 수 있기 때문입니다.
+  const progressByLabel = new Map();
+
+  // 월요일부터 일요일까지, 날짜가 이른 것부터 순서대로 훑으면서 덮어씀
+  // (뒤에서 덮어쓰므로, 결과적으로 "그 주의 가장 마지막 값"이 남게 됨)
   for(let i=0;i<7;i++){
     const dateStr = toDateStr(addDays(weekStartDate, i));
     const items = logsByEmpDate[`${empId}_${dateStr}`] || [];
-    count += items.length;
-    let dayHasLeave = false;
+    totalCount += items.length;
     items.forEach(it => {
-      if(it.progress !== null && it.progress !== undefined){
-        progressSum += it.progress; progressCount++;
-      }
-      if(containsLeaveKeyword(it.content)) dayHasLeave = true;
+      if(it.progress === null || it.progress === undefined) return; // 진행률 없는 항목은 건너뜀
+      const label = (it.content || '').trim(); // 항목 이름 = 업무 내용 글자 그대로 (예: "링스1")
+      if(!label) return;
+      progressByLabel.set(label, it.progress);
     });
-    if(dayHasLeave) leaveDays++;
   }
-  if(count === 0) return '이번 주 입력된 항목이 없습니다.';
-  let text = `총 ${count}건 입력`;
-  if(progressCount > 0){
-    text += ` · 평균 진행률 ${Math.round(progressSum/progressCount)}%`;
-  }
-  if(leaveDays > 0){
-    text += ` · 연차/휴가 ${leaveDays}일`;
-  }
-  return text;
+
+  if(totalCount === 0) return '이번 주 입력된 항목이 없습니다.';
+  if(progressByLabel.size === 0) return '진행률이 입력된 항목이 없습니다.';
+
+  // "항목이름 진행률%" 형태로 한 줄씩 만들고, 줄바꿈으로 이어붙임
+  // (CSS의 .summary-text가 white-space:pre-wrap 이라서 줄바꿈이 그대로 화면에 표시됨)
+  return Array.from(progressByLabel.entries())
+    .map(([label, pct]) => `${label} ${pct}%`)
+    .join('\n');
 }
 
 // 주간정리 칸 하나의 내용을 화면에 그리는 함수.
@@ -1422,6 +1455,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('todayBtn').addEventListener('click', () => {
     currentYear = TODAY.getFullYear();
     currentMonth = TODAY.getMonth() + 1;
+    refreshAll();
+  });
+
+  // "↻ 새로고침" 버튼 - 지금 보고 있는 연/월은 그대로 두고, 서버에서 데이터만 다시 불러옴
+  document.getElementById('refreshBtn').addEventListener('click', () => {
     refreshAll();
   });
 
