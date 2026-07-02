@@ -313,8 +313,10 @@
     display:flex; align-items:center; justify-content:space-between; gap:6px;
     /* justify-content:space-between = 왼쪽엔 이름/직급, 오른쪽 끝엔 "⋯" 관리버튼이 오도록 양쪽으로 배치 */
   }
-  .emp-name{ font-weight:700; font-size:14px; }  /* 인원 "이름" 글자 (예: "주종현") - 굵고 14px */
-  .emp-pos{ font-size:11px; color:var(--muted); font-weight:500; margin-top:2px; } /* 인원 "직급" 글자 (예: "차장") - 작고 흐린 회색 */
+  /* 이름과 직급을 한 줄에 나란히 배치하는 줄 (예: "주종현 차장") */
+  .emp-name-row{ display:flex; align-items:baseline; gap:6px; }
+  .emp-name{ font-weight:700; font-size:14px; }  /* 인원 "이름" 글자 (예: "주종현") - 굵고 14px (기존과 동일) */
+  .emp-pos{ font-size:11px; color:var(--muted); font-weight:500; } /* 인원 "직급" 글자 (예: "차장") - 작고 흐린 회색 (기존과 동일, 이제 이름 옆에 나란히 표시) */
   .emp-menu-btn{
     border:none; background:none; color:var(--muted); cursor:pointer;
     font-size:16px; padding:2px 6px; border-radius:5px; line-height:1;
@@ -846,9 +848,9 @@ function renderHead(){
     // 각각 위쪽 CSS 규칙과 이름이 연결되어 생김새가 정해짐
     th.innerHTML = `
       <div class="emp-head">
-        <div>
-          <div class="emp-name">${escapeHtml(emp.name)}</div>
-          ${emp.position ? `<div class="emp-pos">${escapeHtml(emp.position)}</div>` : ''}
+        <div class="emp-name-row">
+          <span class="emp-name">${escapeHtml(emp.name)}</span>
+          ${emp.position ? `<span class="emp-pos">${escapeHtml(emp.position)}</span>` : ''}
         </div>
         <button class="emp-menu-btn" data-emp="${emp.id}" title="관리">⋯</button>
       </div>`;
