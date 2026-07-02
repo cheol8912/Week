@@ -269,7 +269,7 @@
   .monthly-card-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
   .monthly-card-head .name{ font-weight:700; font-size:15px; color:var(--ink); } /* 인원 이름 */
   .monthly-card-head .pos{ font-size:12px; color:var(--muted); font-weight:500; } /* 인원 직급 */
-  .monthly-card .summary-para{ font-size:13.5px; line-height:1.7; color:var(--ink); } /* 한 문단짜리 자동요약 글자 */
+  .monthly-card .summary-para{ font-size:13.5px; line-height:1.7; color:var(--ink); white-space:pre-wrap; } /* 자동요약 글자 - white-space:pre-wrap 덕분에 줄바꿈이 그대로 표시됨 */
 
   /* ========================================================================
      ▣ 표(달력) 영역 - 날짜, 인원 이름, 업무 내용이 표시되는 큰 표
@@ -1215,7 +1215,8 @@ function computeMonthlySummary(empId){
 
   // 항목별 "이름 진행률%" 을 콤마로 이어붙여서 한 문장으로 압축
   const parts = Array.from(progressByLabel.entries()).map(([label, pct]) => `${label} ${pct}%`);
-  return `이번 달 항목별 최종 진행률은 ${parts.join(', ')}입니다.`;
+  // "이번 달 진행률" 이라는 제목 한 줄 + 항목별로 줄바꿈해서 한 줄씩 나열
+  return `이번 달 진행률\n${parts.join('\n')}`;
 }
 
 // 월간일지 탭 안에, 인원별로 카드를 하나씩 만들어서 채워 넣는 함수
@@ -1309,7 +1310,7 @@ function openDayModal(emp, date){
 
   // 항목 목록(item-row들)을 HTML 글자로 만들어주는 함수.
   // [수정됨] "내용" 하나뿐이던 입력창을 "타이틀"과 "내용" 두 개로 나눔.
-  // - 타이틀: 짧은 이름 (예: "GS-W805", "주_25034_SG260502") - 날짜가 달라도 같은 항목이면 이 이름을 똑같이 적어주면
+  // - 타이틀: 짧은 이름 (예: "A", "링스1") - 날짜가 달라도 같은 항목이면 이 이름을 똑같이 적어주면
   //           주간정리/월간정리가 이 이름을 기준으로 최신 진행률을 모아서 보여줌
   // - 내용: 그날그날 달라도 되는 상세 설명 (예: "모델링", "도면 작업")
   function itemsHtml(){
@@ -1321,7 +1322,7 @@ function openDayModal(emp, date){
         <button class="item-remove" data-remove="${idx}" title="삭제">✕</button>
         <div class="field">
           <label>타이틀</label>
-          <input type="text" data-field="title" data-idx="${idx}" value="${escapeHtml(it.title || '')}" placeholder="예: GS-W805, 주_26043_SG_260402" />
+          <input type="text" data-field="title" data-idx="${idx}" value="${escapeHtml(it.title || '')}" placeholder="예: A, 링스1" />
         </div>
         <div class="field">
           <label>내용</label>
