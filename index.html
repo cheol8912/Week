@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>업무일지</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --navy:#0B1220;
+    --navy-light:#16213A;
+    --blueprint:#2B6CB0;
+    --blueprint-strong:#1B4D89;
+    --blueprint-bg:#EAF2FB;
+    --line:#D3DEE9;
+    --paper:#F5F7FA;
+    --ink:#1A2332;
+    --muted:#64748B;
+    --amber:#B9781F;
+    --amber-bg:#FBEEDA;
+    --amber-line:#E8C08B;
+    --danger:#C0392B;
+    --radius:10px;
+    --sans:'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    --mono:'JetBrains Mono', 'D2Coding', monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  header.app-header{
+    background:var(--navy);
+    color:#fff;
+    padding:16px 20px;
+    position:sticky; top:0; z-index:30;
+  }
+  .header-row{
+    display:flex; align-items:center; justify-content:space-between;
+    max-width:1400px; margin:0 auto;
+    flex-wrap:wrap; gap:10px;
+  }
+  .app-title{
+    font-size:17px; font-weight:700; letter-spacing:0.2px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .app-title .tag{
+    font-family:var(--mono); font-size:11px; color:var(--blueprint-bg);
+    background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;
+    letter-spacing:0.5px;
+  }
+
+  .week-nav{
+    display:flex; align-items:center; gap:10px;
+  }
+  .week-nav button.nav-btn{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.15);
+    color:#fff; width:30px; height:30px; border-radius:7px;
+    cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
+    transition:background .15s;
+  }
+  .week-nav button.nav-btn:hover{ background:rgba(255,255,255,0.18); }
+
+  .week-range{
+    font-family:var(--mono); font-size:13px; letter-spacing:0.3px;
+    padding:6px 14px; position:relative;
+    border-top:1px solid rgba(255,255,255,0.35);
+    border-bottom:1px solid rgba(255,255,255,0.35);
+  }
+  .week-range::before, .week-range::after{
+    content:""; position:absolute; top:-4px; width:1px; height:9px;
+    background:rgba(255,255,255,0.35);
+  }
+  .week-range::before{ left:0; }
+  .week-range::after{ right:0; }
+
+  .today-btn{
+    background:none; border:1px solid rgba(255,255,255,0.3); color:#fff;
+    font-size:12px; padding:6px 12px; border-radius:7px; cursor:pointer;
+    font-family:var(--sans);
+  }
+  .today-btn:hover{ background:rgba(255,255,255,0.1); }
+
+  .add-employee-btn{
+    background:var(--blueprint); color:#fff; border:none;
+    font-size:13px; padding:8px 14px; border-radius:7px; cursor:pointer;
+    font-weight:600; display:flex; align-items:center; gap:6px;
+  }
+  .add-employee-btn:hover{ background:var(--blueprint-strong); }
+
+  /* ---------- Grid ---------- */
+  main{ max-width:1400px; margin:0 auto; padding:20px; }
+
+  .grid-wrap{
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:#fff;
+  }
+  table.log-grid{
+    border-collapse:separate; border-spacing:0;
+    width:100%; min-width:640px;
+  }
+  table.log-grid th, table.log-grid td{
+    border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);
+    vertical-align:top;
+  }
+  table.log-grid th:last-child, table.log-grid td:last-child{ border-right:none; }
+
+  .day-label-col{
+    width:78px; min-width:78px;
+    position:sticky; left:0; z-index:5;
+    background:var(--blueprint-bg);
+  }
+  thead .day-label-col{ z-index:15; }
+
+  thead th{
+    background:#fff;
+    position:sticky; top:0; z-index:10;
+    padding:0;
+  }
+  .emp-head{
+    padding:12px 14px; min-width:190px;
+    display:flex; align-items:center; justify-content:space-between; gap:6px;
+  }
+  .emp-name{ font-weight:700; font-size:14px; }
+  .emp-pos{ font-size:11px; color:var(--muted); font-weight:500; margin-top:2px; }
+  .emp-menu-btn{
+    border:none; background:none; color:var(--muted); cursor:pointer;
+    font-size:16px; padding:2px 6px; border-radius:5px; line-height:1;
+  }
+  .emp-menu-btn:hover{ background:var(--paper); color:var(--ink); }
+
+  .day-cell-label{
+    padding:10px 8px; text-align:center;
+    font-size:12px; font-weight:700; color:var(--blueprint-strong);
+    font-family:var(--mono);
+  }
+  .day-cell-label .dow{ display:block; font-size:11px; color:var(--muted); font-weight:500; margin-top:1px; }
+  tr.weekend .day-cell-label{ color:var(--muted); }
+  tr.weekend td:not(.day-label-col){ background:#FAFBFC; }
+
+  .day-cell{
+    padding:8px 10px; min-width:190px; cursor:pointer;
+    transition:background .12s;
+  }
+  .day-cell:hover{ background:var(--blueprint-bg); }
+  .day-cell.is-leave{ background:var(--amber-bg); }
+  .day-cell.is-leave:hover{ background:#F6E3C2; }
+
+  .log-item{
+    font-size:12.5px; line-height:1.5; margin-bottom:4px;
+    display:flex; gap:5px; align-items:baseline;
+  }
+  .log-item .dot{ color:var(--blueprint); flex-shrink:0; }
+  .log-item .txt{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px;
+  }
+  .log-item .pct{
+    font-family:var(--mono); font-size:11px; color:var(--muted); flex-shrink:0;
+  }
+  .is-leave .log-item .dot{ color:var(--amber); }
+
+  .more-link{
+    font-size:11px; color:var(--blueprint); font-weight:600; margin-top:2px;
+  }
+  .empty-hint{
+    font-size:11.5px; color:#B8C0CC;
+  }
+
+  /* summary row */
+  tr.summary-row .day-label-col{
+    font-size:12px; font-weight:700; color:var(--navy);
+    background:var(--blueprint-bg);
+  }
+  tr.summary-row td:not(.day-label-col){
+    background:#FBFCFE;
+    padding:10px 12px;
+    font-size:12.5px; line-height:1.5;
+  }
+  .summary-text{ color:var(--ink); white-space:pre-wrap; }
+  .summary-text.auto{ color:var(--muted); }
+  .summary-edit-btn{
+    font-size:11px; color:var(--blueprint); background:none; border:none;
+    cursor:pointer; padding:0; margin-top:4px; font-weight:600;
+  }
+  .summary-textarea{
+    width:100%; min-height:56px; font-family:var(--sans); font-size:12.5px;
+    border:1px solid var(--line); border-radius:6px; padding:6px 8px; resize:vertical;
+  }
+  .summary-actions{ display:flex; gap:8px; margin-top:6px; }
+  .summary-actions button{
+    font-size:11px; padding:4px 9px; border-radius:5px; border:1px solid var(--line);
+    background:#fff; cursor:pointer;
+  }
+  .summary-actions button.primary{ background:var(--blueprint); color:#fff; border-color:var(--blueprint); }
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--muted);
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(11,18,32,0.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100; padding:16px;
+  }
+  .modal-panel{
+    background:#fff; border-radius:12px; width:100%; max-width:460px;
+    max-height:86vh; overflow-y:auto;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-header{
+    padding:16px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .modal-header h3{ margin:0; font-size:15px; }
+  .modal-close{ border:none; background:none; font-size:18px; cursor:pointer; color:var(--muted); }
+  .modal-body{ padding:16px 20px; }
+  .modal-footer{
+    padding:14px 20px; border-top:1px solid var(--line);
+    display:flex; justify-content:flex-end; gap:8px;
+  }
+  .btn{
+    font-size:13px; padding:8px 16px; border-radius:7px; border:1px solid var(--line);
+    background:#fff; cursor:pointer; font-family:var(--sans);
+  }
+  .btn:hover{ background:var(--paper); }
+  .btn.primary{ background:var(--blueprint); border-color:var(--blueprint); color:#fff; font-weight:600; }
+  .btn.primary:hover{ background:var(--blueprint-strong); }
+  .btn.danger{ color:var(--danger); border-color:#F0CBC5; }
+  .btn.danger:hover{ background:#FDEEEC; }
+
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:600; }
+  .field input[type=text], .field input[type=number], .field textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px;
+    font-family:var(--sans); font-size:13.5px;
+  }
+  .field textarea{ min-height:64px; resize:vertical; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+
+  .item-row{
+    border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px;
+    position:relative;
+  }
+  .item-row .item-remove{
+    position:absolute; top:8px; right:8px; border:none; background:none;
+    color:var(--muted); cursor:pointer; font-size:14px;
+  }
+  .item-row .item-remove:hover{ color:var(--danger); }
+  .add-item-btn{
+    width:100%; padding:9px; border:1px dashed var(--line); border-radius:8px;
+    background:none; color:var(--blueprint); font-size:13px; cursor:pointer; font-weight:600;
+  }
+  .add-item-btn:hover{ background:var(--blueprint-bg); }
+
+  .hint-text{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff; padding:10px 18px; border-radius:8px;
+    font-size:13px; z-index:200; opacity:0; transition:opacity .2s;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; }
+
+  @media (max-width:640px){
+    .header-row{ align-items:flex-start; }
+    .emp-head{ min-width:140px; padding:10px; }
+    .day-cell{ min-width:140px; }
+    .log-item .txt{ max-width:100px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <div class="app-title">업무일지 <span class="tag">기술전략팀</span></div>
+    <div class="week-nav">
+      <button class="nav-btn" id="prevWeekBtn" title="이전 주">◀</button>
+      <div class="week-range" id="weekRangeLabel">-</div>
+      <button class="nav-btn" id="nextWeekBtn" title="다음 주">▶</button>
+      <button class="today-btn" id="todayBtn">이번 주</button>
+    </div>
+    <button class="add-employee-btn" id="addEmployeeBtn">+ 인원 추가</button>
+  </div>
+</header>
+
+<main>
+  <div class="grid-wrap">
+    <table class="log-grid" id="logGrid">
+      <thead>
+        <tr id="headRow">
+          <th class="day-label-col"></th>
+        </tr>
+      </thead>
+      <tbody id="gridBody">
+        <!-- rendered by JS -->
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Supabase 설정 — 본인의 프로젝트 값으로 교체하세요.
+   Supabase Dashboard > Project Settings > API 에서 확인 가능합니다.
+   ============================================================ */
+const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- 상태 ---------- */
+let currentWeekStart = startOfWeek(new Date());
+let employees = [];
+let logsByEmpDate = {};   // key: `${empId}_${dateStr}` -> [log, ...]
+let summariesByEmp = {};  // key: empId -> summary row (may be undefined)
+
+const LEAVE_KEYWORDS = ['연차', '휴가', '반차'];
+const DOW_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+
+/* ---------- 날짜 유틸 ---------- */
+function startOfWeek(date){
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(date, n){
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function toDateStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function toDisplay(d){
+  return `${d.getMonth()+1}.${d.getDate()}`;
+}
+function weekEnd(weekStart){ return addDays(weekStart, 6); }
+
+function containsLeaveKeyword(text){
+  if(!text) return false;
+  return LEAVE_KEYWORDS.some(k => text.includes(k));
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   데이터 로딩
+   ============================================================ */
+async function loadEmployees(){
+  const { data, error } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order', { ascending: true });
+  if(error){ console.error(error); showToast('인원 목록을 불러오지 못했습니다'); return; }
+  employees = data || [];
+}
+
+async function loadWeekData(){
+  const start = toDateStr(currentWeekStart);
+  const end = toDateStr(weekEnd(currentWeekStart));
+
+  const { data: logs, error: logErr } = await supabase
+    .from('work_logs')
+    .select('*')
+    .gte('log_date', start)
+    .lte('log_date', end)
+    .order('sort_order', { ascending: true });
+  if(logErr){ console.error(logErr); showToast('업무 기록을 불러오지 못했습니다'); }
+
+  logsByEmpDate = {};
+  (logs || []).forEach(l => {
+    const key = `${l.employee_id}_${l.log_date}`;
+    if(!logsByEmpDate[key]) logsByEmpDate[key] = [];
+    logsByEmpDate[key].push(l);
+  });
+
+  const { data: summaries, error: sumErr } = await supabase
+    .from('weekly_summaries')
+    .select('*')
+    .eq('week_start', start);
+  if(sumErr){ console.error(sumErr); }
+
+  summariesByEmp = {};
+  (summaries || []).forEach(s => { summariesByEmp[s.employee_id] = s; });
+}
+
+async function refreshAll(){
+  await loadEmployees();
+  await loadWeekData();
+  render();
+}
+
+/* ============================================================
+   렌더링
+   ============================================================ */
+function render(){
+  renderWeekLabel();
+  renderHead();
+  renderBody();
+}
+
+function renderWeekLabel(){
+  const start = currentWeekStart;
+  const end = weekEnd(start);
+  const label = document.getElementById('weekRangeLabel');
+  label.textContent =
+    `${start.getFullYear()}.${toDisplay(start)}(월) — ${toDisplay(end)}(일)`;
+}
+
+function renderHead(){
+  const row = document.getElementById('headRow');
+  row.innerHTML = '<th class="day-label-col"></th>';
+  if(employees.length === 0){
+    row.innerHTML += `<th style="padding:14px;color:var(--muted);font-weight:500;font-size:13px;">
+      인원이 없습니다. 우측 상단 '+ 인원 추가'로 시작하세요.</th>`;
+    return;
+  }
+  employees.forEach(emp => {
+    const th = document.createElement('th');
+    th.innerHTML = `
+      <div class="emp-head">
+        <div>
+          <div class="emp-name">${escapeHtml(emp.name)}</div>
+          ${emp.position ? `<div class="emp-pos">${escapeHtml(emp.position)}</div>` : ''}
+        </div>
+        <button class="emp-menu-btn" data-emp="${emp.id}" title="관리">⋯</button>
+      </div>`;
+    th.querySelector('.emp-menu-btn').addEventListener('click', () => openEmployeeMenu(emp));
+    row.appendChild(th);
+  });
+}
+
+function renderBody(){
+  const body = document.getElementById('gridBody');
+  body.innerHTML = '';
+
+  if(employees.length === 0){
+    body.innerHTML = `<tr><td class="day-label-col"></td><td class="empty-state">인원을 먼저 추가해주세요.</td></tr>`;
+    return;
+  }
+
+  for(let i=0; i<7; i++){
+    const date = addDays(currentWeekStart, i);
+    const dateStr = toDateStr(date);
+    const isWeekend = i >= 5;
+    const tr = document.createElement('tr');
+    tr.className = isWeekend ? 'weekend' : '';
+
+    const labelTd = document.createElement('td');
+    labelTd.className = 'day-label-col';
+    labelTd.innerHTML = `<div class="day-cell-label">${date.getDate()}<span class="dow">(${DOW_LABELS[i]})</span></div>`;
+    tr.appendChild(labelTd);
+
+    employees.forEach(emp => {
+      const key = `${emp.id}_${dateStr}`;
+      const items = logsByEmpDate[key] || [];
+      const hasLeave = items.some(it => containsLeaveKeyword(it.content));
+
+      const td = document.createElement('td');
+      td.className = 'day-cell' + (hasLeave ? ' is-leave' : '');
+      td.addEventListener('click', () => openDayModal(emp, date));
+
+      if(items.length === 0){
+        td.innerHTML = `<div class="empty-hint">+ 항목 추가</div>`;
+      } else {
+        const shown = items.slice(0, 2);
+        let html = shown.map(it => `
+          <div class="log-item">
+            <span class="dot">·</span>
+            <span class="txt" title="${escapeHtml(it.content)}">${escapeHtml(it.content)}</span>
+            ${it.progress !== null && it.progress !== undefined ? `<span class="pct">${it.progress}%</span>` : ''}
+          </div>`).join('');
+        if(items.length > 2){
+          html += `<div class="more-link">+${items.length - 2}개 더보기</div>`;
+        }
+        td.innerHTML = html;
+      }
+      tr.appendChild(td);
+    });
+
+    body.appendChild(tr);
+  }
+
+  // 주간정리 행
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'summary-row';
+  const sumLabelTd = document.createElement('td');
+  sumLabelTd.className = 'day-label-col';
+  sumLabelTd.textContent = '주간정리';
+  sumTr.appendChild(sumLabelTd);
+
+  employees.forEach(emp => {
+    const td = document.createElement('td');
+    td.dataset.empId = emp.id;
+    renderSummaryCell(td, emp);
+    sumTr.appendChild(td);
+  });
+  body.appendChild(sumTr);
+}
+
+function computeAutoSummary(empId){
+  const start = currentWeekStart;
+  let count = 0;
+  let progressSum = 0;
+  let progressCount = 0;
+  let leaveDays = 0;
+  for(let i=0;i<7;i++){
+    const dateStr = toDateStr(addDays(start, i));
+    const items = logsByEmpDate[`${empId}_${dateStr}`] || [];
+    count += items.length;
+    let dayHasLeave = false;
+    items.forEach(it => {
+      if(it.progress !== null && it.progress !== undefined){
+        progressSum += it.progress; progressCount++;
+      }
+      if(containsLeaveKeyword(it.content)) dayHasLeave = true;
+    });
+    if(dayHasLeave) leaveDays++;
+  }
+  if(count === 0) return '이번 주 입력된 항목이 없습니다.';
+  let text = `총 ${count}건 입력`;
+  if(progressCount > 0){
+    text += ` · 평균 진행률 ${Math.round(progressSum/progressCount)}%`;
+  }
+  if(leaveDays > 0){
+    text += ` · 연차/휴가 ${leaveDays}일`;
+  }
+  return text;
+}
+
+function renderSummaryCell(td, emp){
+  const existing = summariesByEmp[emp.id];
+  const isManual = existing && existing.is_manual && existing.summary_text;
+  const text = isManual ? existing.summary_text : computeAutoSummary(emp.id);
+
+  td.innerHTML = `
+    <div class="summary-text ${isManual ? '' : 'auto'}">${escapeHtml(text)}</div>
+    <button class="summary-edit-btn" data-emp="${emp.id}">${isManual ? '수정' : '직접 작성'}</button>
+    ${isManual ? `<button class="summary-edit-btn" data-emp="${emp.id}" data-reset="1" style="margin-left:8px;">자동요약으로 되돌리기</button>` : ''}
+  `;
+  td.querySelectorAll('.summary-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(btn.dataset.reset){
+        resetSummaryToAuto(emp.id, td);
+      } else {
+        editSummaryInline(emp, td, text);
+      }
+    });
+  });
+}
+
+function editSummaryInline(emp, td, currentText){
+  const existing = summariesByEmp[emp.id];
+  const startVal = (existing && existing.is_manual) ? existing.summary_text : '';
+  td.innerHTML = `
+    <textarea class="summary-textarea" placeholder="${escapeHtml(computeAutoSummary(emp.id))}">${escapeHtml(startVal)}</textarea>
+    <div class="summary-actions">
+      <button class="cancel-sum">취소</button>
+      <button class="primary save-sum">저장</button>
+    </div>
+  `;
+  const textarea = td.querySelector('textarea');
+  textarea.focus();
+  td.querySelector('.cancel-sum').addEventListener('click', () => renderSummaryCell(td, emp));
+  td.querySelector('.save-sum').addEventListener('click', async () => {
+    const val = textarea.value.trim();
+    await saveSummary(emp.id, val);
+    renderSummaryCell(td, emp);
+  });
+}
+
+async function saveSummary(empId, text){
+  const start = toDateStr(currentWeekStart);
+  const payload = {
+    employee_id: empId,
+    week_start: start,
+    summary_text: text || null,
+    is_manual: !!text,
+    updated_at: new Date().toISOString()
+  };
+  const { data, error } = await supabase
+    .from('weekly_summaries')
+    .upsert(payload, { onConflict: 'employee_id,week_start' })
+    .select()
+    .single();
+  if(error){ console.error(error); showToast('주간정리 저장 실패'); return; }
+  summariesByEmp[empId] = data;
+  showToast('주간정리를 저장했습니다');
+}
+
+async function resetSummaryToAuto(empId, td){
+  const start = toDateStr(currentWeekStart);
+  const { error } = await supabase
+    .from('weekly_summaries')
+    .delete()
+    .eq('employee_id', empId)
+    .eq('week_start', start);
+  if(error){ console.error(error); showToast('되돌리기 실패'); return; }
+  delete summariesByEmp[empId];
+  const emp = employees.find(e => e.id === empId);
+  renderSummaryCell(td, emp);
+  showToast('자동 요약으로 되돌렸습니다');
+}
+
+function escapeHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;');
+}
+
+/* ============================================================
+   모달: 공통
+   ============================================================ */
+function openModal({ title, bodyHtml, footerHtml, onMount }){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button class="modal-close" id="modalCloseBtn">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody">${bodyHtml}</div>
+        ${footerHtml ? `<div class="modal-footer">${footerHtml}</div>` : ''}
+      </div>
+    </div>
+  `;
+  const close = () => { root.innerHTML = ''; };
+  document.getElementById('modalCloseBtn').addEventListener('click', close);
+  document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if(e.target.id === 'modalOverlay') close();
+  });
+  if(onMount) onMount(close);
+  return close;
+}
+
+/* ============================================================
+   모달: 하루 업무 상세
+   ============================================================ */
+function openDayModal(emp, date){
+  const dateStr = toDateStr(date);
+  const key = `${emp.id}_${dateStr}`;
+  let items = JSON.parse(JSON.stringify(logsByEmpDate[key] || []));
+
+  const dowLabel = DOW_LABELS[(date.getDay()+6)%7];
+  const title = `${emp.name} · ${date.getMonth()+1}.${date.getDate()}(${dowLabel})`;
+
+  function itemsHtml(){
+    if(items.length === 0){
+      return `<div class="hint-text" style="margin-bottom:10px;">아직 입력된 항목이 없습니다.</div>`;
+    }
+    return items.map((it, idx) => `
+      <div class="item-row" data-idx="${idx}">
+        <button class="item-remove" data-remove="${idx}" title="삭제">✕</button>
+        <div class="field">
+          <label>내용</label>
+          <textarea data-field="content" data-idx="${idx}">${escapeHtml(it.content)}</textarea>
+        </div>
+        <div class="field" style="max-width:120px;">
+          <label>진행률 (%)</label>
+          <input type="number" min="0" max="100" data-field="progress" data-idx="${idx}"
+                 value="${it.progress ?? ''}" placeholder="선택입력" />
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const close = openModal({
+    title,
+    bodyHtml: `
+      <div id="itemsContainer">${itemsHtml()}</div>
+      <button class="add-item-btn" id="addItemBtn">+ 항목 추가</button>
+      <div class="hint-text">내용에 "연차 / 휴가 / 반차"가 포함되면 해당 날짜 칸이 자동으로 표시됩니다.</div>
+    `,
+    footerHtml: `
+      <button class="btn" id="cancelDayBtn">취소</button>
+      <button class="btn primary" id="saveDayBtn">저장</button>
+    `,
+    onMount: () => {
+      bindItemEvents();
+      document.getElementById('addItemBtn').addEventListener('click', () => {
+        items.push({ content: '', progress: null, _isNew: true });
+        refreshItemsContainer();
+      });
+      document.getElementById('cancelDayBtn').addEventListener('click', close);
+      document.getElementById('saveDayBtn').addEventListener('click', async () => {
+        await persistDay();
+        close();
+      });
+    }
+  });
+
+  function bindItemEvents(){
+    document.querySelectorAll('[data-field="content"]').forEach(el => {
+      el.addEventListener('input', () => { items[el.dataset.idx].content = el.value; });
+    });
+    document.querySelectorAll('[data-field="progress"]').forEach(el => {
+      el.addEventListener('input', () => {
+        const v = el.value === '' ? null : Math.max(0, Math.min(100, Number(el.value)));
+        items[el.dataset.idx].progress = v;
+      });
+    });
+    document.querySelectorAll('[data-remove]').forEach(el => {
+      el.addEventListener('click', () => {
+        items.splice(Number(el.dataset.remove), 1);
+        refreshItemsContainer();
+      });
+    });
+  }
+
+  function refreshItemsContainer(){
+    document.getElementById('itemsContainer').innerHTML = itemsHtml();
+    bindItemEvents();
+  }
+
+  async function persistDay(){
+    const cleanItems = items.map(it => ({ ...it, content: (it.content || '').trim() }))
+                             .filter(it => it.content.length > 0);
+
+    // 기존 항목 전체 삭제 후 재삽입 (해당 날짜/직원 기준) — 단순하고 안전한 방식
+    const { error: delErr } = await supabase
+      .from('work_logs')
+      .delete()
+      .eq('employee_id', emp.id)
+      .eq('log_date', dateStr);
+    if(delErr){ console.error(delErr); showToast('저장 중 오류가 발생했습니다'); return; }
+
+    if(cleanItems.length > 0){
+      const insertPayload = cleanItems.map((it, idx) => ({
+        employee_id: emp.id,
+        log_date: dateStr,
+        content: it.content,
+        progress: it.progress,
+        sort_order: idx
+      }));
+      const { error: insErr } = await supabase.from('work_logs').insert(insertPayload);
+      if(insErr){ console.error(insErr); showToast('저장 중 오류가 발생했습니다'); return; }
+    }
+
+    await loadWeekData();
+    render();
+    showToast('저장했습니다');
+  }
+}
+
+/* ============================================================
+   모달: 인원 추가
+   ============================================================ */
+function openAddEmployeeModal(){
+  const close = openModal({
+    title: '인원 추가',
+    bodyHtml: `
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="newEmpName" placeholder="예: 김태훈" />
+      </div>
+      <div class="field">
+        <label>직급 (선택)</label>
+        <input type="text" id="newEmpPos" placeholder="예: 주임" />
+      </div>
+    `,
+    footerHtml: `
+      <button class="btn" id="cancelAddEmp">취소</button>
+      <button class="btn primary" id="saveAddEmp">추가</button>
+    `,
+    onMount: () => {
+      document.getElementById('newEmpName').focus();
+      document.getElementById('cancelAddEmp').addEventListener('click', close);
+      document.getElementById('saveAddEmp').addEventListener('click', async () => {
+        const name = document.getElementById('newEmpName').value.trim();
+        const pos = document.getElementById('newEmpPos').value.trim();
+        if(!name){ showToast('이름을 입력해주세요'); return; }
+        const sortOrder = employees.length;
+        const { error } = await supabase.from('employees').insert({
+          name, position: pos || null, sort_order: sortOrder, active: true
+        });
+        if(error){ console.error(error); showToast('추가 실패'); return; }
+        close();
+        await refreshAll();
+        showToast(`${name}님을 추가했습니다`);
+      });
+    }
+  });
+}
+
+/* ============================================================
+   모달: 인원 관리 (이름 수정 / 삭제)
+   ============================================================ */
+function openEmployeeMenu(emp){
+  const close = openModal({
+    title: `${emp.name} 관리`,
+    bodyHtml: `
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="editEmpName" value="${escapeHtml(emp.name)}" />
+      </div>
+      <div class="field">
+        <label>직급</label>
+        <input type="text" id="editEmpPos" value="${escapeHtml(emp.position || '')}" />
+      </div>
+      <div class="hint-text">삭제 시 해당 인원의 컬럼은 사라지지만, 기존 업무 기록은 보존됩니다.</div>
+    `,
+    footerHtml: `
+      <button class="btn danger" id="deleteEmpBtn">삭제</button>
+      <button class="btn" id="cancelEditEmp">취소</button>
+      <button class="btn primary" id="saveEditEmp">저장</button>
+    `,
+    onMount: () => {
+      document.getElementById('cancelEditEmp').addEventListener('click', close);
+      document.getElementById('saveEditEmp').addEventListener('click', async () => {
+        const name = document.getElementById('editEmpName').value.trim();
+        const pos = document.getElementById('editEmpPos').value.trim();
+        if(!name){ showToast('이름을 입력해주세요'); return; }
+        const { error } = await supabase.from('employees')
+          .update({ name, position: pos || null })
+          .eq('id', emp.id);
+        if(error){ console.error(error); showToast('저장 실패'); return; }
+        close();
+        await refreshAll();
+        showToast('저장했습니다');
+      });
+      document.getElementById('deleteEmpBtn').addEventListener('click', () => {
+        confirmDeleteEmployee(emp, close);
+      });
+    }
+  });
+}
+
+function confirmDeleteEmployee(emp, parentClose){
+  openModal({
+    title: '인원 삭제',
+    bodyHtml: `<p style="margin:0;font-size:13.5px;">"${escapeHtml(emp.name)}" 님을 목록에서 삭제할까요?<br>업무 기록은 삭제되지 않고 보존됩니다.</p>`,
+    footerHtml: `
+      <button class="btn" id="cancelDelete">취소</button>
+      <button class="btn danger" id="confirmDelete">삭제</button>
+    `,
+    onMount: (closeThis) => {
+      document.getElementById('cancelDelete').addEventListener('click', closeThis);
+      document.getElementById('confirmDelete').addEventListener('click', async () => {
+        const { error } = await supabase.from('employees')
+          .update({ active: false })
+          .eq('id', emp.id);
+        if(error){ console.error(error); showToast('삭제 실패'); return; }
+        closeThis();
+        parentClose();
+        await refreshAll();
+        showToast(`${emp.name}님을 삭제했습니다`);
+      });
+    }
+  });
+}
+
+/* ============================================================
+   이벤트 바인딩 & 초기화
+   ============================================================ */
+document.getElementById('prevWeekBtn').addEventListener('click', async () => {
+  currentWeekStart = addDays(currentWeekStart, -7);
+  await loadWeekData(); render();
+});
+document.getElementById('nextWeekBtn').addEventListener('click', async () => {
+  currentWeekStart = addDays(currentWeekStart, 7);
+  await loadWeekData(); render();
+});
+document.getElementById('todayBtn').addEventListener('click', async () => {
+  currentWeekStart = startOfWeek(new Date());
+  await loadWeekData(); render();
+});
+document.getElementById('addEmployeeBtn').addEventListener('click', openAddEmployeeModal);
+
+refreshAll();
+</script>
+</body>
+</html>
