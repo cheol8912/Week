@@ -1394,10 +1394,18 @@ function switchTab(tab){
    (위쪽 buildProgressSummaryLines()와 동일한 롤업 계산을 그대로 재사용함)
    ============================================================ */
 function computeMonthlySummary(empId){
-  const totalDays = daysInMonth(currentYear, currentMonth);
+  // [수정됨] 예전엔 "이번 달 1일~말일"만 훑어서, 화면에 이미 불러와져 있는 6월 29·30일 같은
+  // 월 경계 날짜(이전/다음 달 걸친 주)가 계산에서 빠졌었음. 주간정리와 똑같은 범위(달력에 실제로
+  // 표시되는 전체 주 범위)로 맞춰서, 월 경계에 걸친 데이터도 빠짐없이 반영되도록 함.
+  const first = monthFirstDate(currentYear, currentMonth);
+  const last  = monthLastDate(currentYear, currentMonth);
+  const rangeStart = startOfWeek(first);           // 1일이 속한 주의 월요일 (예: 6월 29일)
+  const rangeEnd   = weekEnd(startOfWeek(last));    // 말일이 속한 주의 일요일
+  const totalRangeDays = Math.round((rangeEnd - rangeStart) / 86400000) + 1;
+
   const dayItemsList = [];
-  for(let d = 1; d <= totalDays; d++){
-    const dateStr = toDateStr(new Date(currentYear, currentMonth-1, d));
+  for(let i = 0; i < totalRangeDays; i++){
+    const dateStr = toDateStr(addDays(rangeStart, i));
     dayItemsList.push(logsByEmpDate[`${empId}_${dateStr}`] || []);
   }
   const { totalCount, lines } = buildProgressSummaryLines(dayItemsList);
