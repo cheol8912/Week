@@ -96,6 +96,12 @@
     color:var(--ink);          /* 페이지 전체 기본 글자색 */
     font-family:var(--sans);   /* 페이지 전체 기본 글씨체 */
     -webkit-font-smoothing:antialiased; /* 글자를 좀 더 부드럽게(안티앨리어싱) 보이게 하는 설정 */
+    /* ★ 한글(한자/일본어 포함, CJK)은 브라우저 기본값이 "글자와 글자 사이 아무데서나 줄바꿈 가능"이라서,
+       화면이 좁아지면 "업무" 같은 두 글자짜리 단어도 "업" / "무"로 뚝뚝 끊겨서 두 줄로 나뉘어 버립니다.
+       word-break:keep-all 을 주면 "의미가 있는 한 덩어리(띄어쓰기 기준)"는 최대한 줄바꿈하지 않고
+       유지하려고 합니다. 모바일 화면에서 글자가 이상하게 끊겨 보이는 문제의 핵심 해결책입니다. */
+    word-break:keep-all;
+    overflow-wrap:break-word; /* 그래도 정 안 되면(너무 긴 단어 등) 최후의 수단으로만 줄바꿈 허용 */
   }
 
   /* ========================================================================
@@ -124,19 +130,21 @@
     font-weight:600;      /* 글자 굵기 */
     display:flex; align-items:center; gap:8px;
     color:var(--ink);
+    white-space:nowrap;    /* "업무기록" 글자가 절대 두 줄로 안 쪼개지도록 강제 (모바일 좁은 화면 대응) */
+    min-width:0;           /* flex 아이템이 내용 크기 때문에 줄어들지 못하는 문제를 방지하는 기술적 설정 */
   }
   .header h1 span{ color:var(--blueprint); } /* h1 안의 <span>들은 기본적으로 초록색 ("업무" 글자가 이 규칙 적용받음) */
   /* 실시간 시계(아래 .live-clock)는 위 규칙보다 더 구체적이라서 우선 적용됨 -> 시계 글자는 흐린 회색으로 덮어씀 */
-  .header h1 span.live-clock{ color:var(--muted); font-size:12px; font-weight:400; margin-left:2px; }
+  .header h1 span.live-clock{ color:var(--muted); font-size:12px; font-weight:400; margin-left:2px; white-space:nowrap; }
 
   /* 헤더 오른쪽 영역(버전 글자 + 연결상태)을 가로로 배치 */
-  .header-right{ display:flex; align-items:center; gap:14px; }
+  .header-right{ display:flex; align-items:center; gap:14px; flex-shrink:0; }
 
   /* "v1.0 · 260706" 처럼 작게 표시되는 버전/빌드 날짜 글자 */
   .app-version{ font-size:12px; color:#B8C0CC; white-space:nowrap; }
 
   /* "● 연결됨" 처럼 초록 점 + 글자로 표시되는 연결 상태 표시 */
-  .sync-status{ font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .sync-status{ font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; white-space:nowrap; }
   .sync-dot{
     width:8px; height:8px; border-radius:50%; /* 동그란 점 크기 */
     background:var(--success);                /* 평소(정상 연결)엔 초록색 */
@@ -163,6 +171,7 @@
     font-weight:600;
     font-family:var(--sans);
     cursor:pointer;
+    white-space:nowrap; /* "새로고침" 글자가 줄바꿈되지 않도록 함 */
     transition:background .15s, transform .3s;
   }
   .refresh-btn:hover{ background:#FCE3EC; }
@@ -191,6 +200,7 @@
     text-decoration:none;   /* <a> 태그를 탭처럼 쓰기 위해 밑줄 제거 */
     display:inline-flex; align-items:center;
     font-family:var(--sans);
+    white-space:nowrap; /* "업무관리"/"주간일지" 글자가 좁은 화면에서 줄바꿈되지 않도록 함 */
   }
   .tab:hover{ color:var(--ink); }
   .tab.active{ color:var(--blueprint); border-bottom-color:var(--blueprint); } /* 선택된 탭 = 초록 글자 + 초록 밑줄 */
@@ -204,6 +214,7 @@
     color:var(--blueprint); /* 글자색 = 포인트 초록색 (헤더 제목과 어울리게) */
     letter-spacing:0.3px;
     margin-bottom:10px;     /* 아래쪽 토글 버튼과의 간격 */
+    white-space:nowrap;      /* "기술전략부" 글자가 줄바꿈되지 않도록 함 */
   }
 
   /* ========================================================================
@@ -233,6 +244,7 @@
     cursor:pointer;
     font-family:var(--sans);
     transition:background .15s;
+    white-space:nowrap; /* "진행중"/"완료" 글자가 좁은 화면에서 두 줄로 쪼개지지 않도록 함 */
   }
   .status-toggle button:first-child{ border-right:1px solid var(--line); } /* 두 버튼 사이에 얇은 구분선 */
   .status-toggle button:hover{ background:var(--paper); }
@@ -359,6 +371,7 @@
     cursor:pointer;
     font-weight:600;
     font-family:var(--sans);
+    white-space:nowrap; /* "수정완료" 글자가 좁은 칸에서 줄바꿈되지 않도록 함 */
   }
   .done-btn:hover{ background:var(--blueprint-strong); } /* 마우스를 올리면 더 진한 초록색으로 */
 
@@ -414,6 +427,35 @@
   @media (max-width:600px){
     .col-date, .col-due{ display:none; }
     table.record-grid th:nth-child(3), table.record-grid th:nth-child(4){ display:none; }
+  }
+
+  /* ========================================================================
+     ▣ 모바일(특히 폭이 아주 좁은 화면) 전용 미세조정
+     - 위에서 word-break:keep-all 로 "글자가 이상한 자리에서 끊기는" 문제는 이미 해결했지만,
+       그것과 별개로 "화면 폭 자체가 부족해서 요소들이 답답하게 눌리는" 문제도 같이 손봄.
+     - 헤더의 실시간 시계(초 단위)는 좁은 화면에서는 굳이 없어도 되므로 아예 숨겨서 공간을 확보함.
+     - 각 버튼/글자 크기와 여백을 살짝 줄여서 한 화면에 여유 있게 들어오도록 함.
+     ======================================================================== */
+  @media (max-width:480px){
+    .header{ padding:0 14px; height:56px; }
+    .header h1{ font-size:15px; gap:5px; }
+    .header h1 span.live-clock{ display:none; } /* 실시간 시계는 좁은 화면에서 숨김 (공간 확보 우선) */
+    .header-right{ gap:8px; }
+    .app-version{ font-size:10px; }
+    .sync-status{ font-size:10px; }
+
+    .tab{ padding:12px 14px; font-size:13px; }
+
+    main{ padding:14px; }
+    .dept-title{ font-size:16px; }
+
+    .toolbar-nav{ gap:8px; }
+    .toolbar-nav .nav-group{ flex-wrap:wrap; gap:8px; }
+    .status-toggle button{ padding:8px 14px; font-size:12.5px; }
+    /* 검색창은 토글 버튼과 한 줄에 억지로 끼워넣지 않고, 자리가 부족하면 자연스럽게 다음 줄로 내려가
+       "전체 폭"을 다 쓰도록 함 (억지로 줄바꿈되어 글자가 잘리는 것보다 훨씬 보기 좋음) */
+    .search-box{ flex:1 1 100%; }
+    .search-box input{ width:100%; }
   }
 </style>
 </head>
