@@ -1015,12 +1015,12 @@ async function loadMonthData(){
   const endStr   = toDateStr(rangeEnd);
 
   // ★ [추가됨] 프로젝트 진행률을 "이전 달까지 쭉 이어서" 계산하려면, 이번 달 데이터만으로는 부족합니다.
-  // 그래서 업무기록(work_logs)만큼은 "이번 달 + 이전 2개월"(총 3개월치)을 한꺼번에 불러와서
+  // 그래서 업무기록(work_logs)만큼은 "이번 달 + 이전 5개월"(총 6개월치)을 한꺼번에 불러와서
   // logsByEmpDate에 담아둡니다. 이렇게 해두면, 프로젝트가 지난달/지지난달부터 이어져 왔어도
   // computeAutoSummary / computeMonthlySummary가 그 이전 값을 찾아서 이어붙일 수 있게 됩니다.
   // (주간정리(weekly_summaries)는 "이번 달에 보이는 주"들만 화면에 표시되므로, 그 부분은 예전처럼
-  //  이번 달 범위만 불러와도 충분합니다 - 굳이 3개월치를 다 불러올 필요 없음)
-  const HISTORY_MONTHS_BACK = 2; // 이번 달 포함 총 3개월(이번 달 + 과거 2개월)을 누적 계산 범위로 사용
+  //  이번 달 범위만 불러와도 충분합니다 - 굳이 6개월치를 다 불러올 필요 없음)
+  const HISTORY_MONTHS_BACK = 5; // 이번 달 포함 총 6개월(이번 달 + 과거 5개월)을 누적 계산 범위로 사용
   let histYear = currentYear, histMonth = currentMonth - HISTORY_MONTHS_BACK;
   while(histMonth <= 0){ histMonth += 12; histYear--; } // 월이 0 이하로 내려가면 작년으로 넘어가도록 보정
   const historyFirst = monthFirstDate(histYear, histMonth);
@@ -1029,7 +1029,7 @@ async function loadMonthData(){
   loadedHistoryStart = logsRangeStart; // computeAutoSummary/computeMonthlySummary에서 이 값을 사용함
 
   // 업무 기록(work_logs)을 불러와서 "인원ID_날짜" 형태의 이름표를 붙여 정리해둠
-  // (조회 범위가 logsStartStr ~ endStr 로, 이번 달 범위보다 더 넓게(과거 2개월치 추가) 불러옵니다)
+  // (조회 범위가 logsStartStr ~ endStr 로, 이번 달 범위보다 더 넓게(과거 5개월치 추가) 불러옵니다)
   logsByEmpDate = {};
   try {
     const logs = await sb(`work_logs?department=eq.${DEPT_Q}&log_date=gte.${logsStartStr}&log_date=lte.${endStr}&order=sort_order.asc`);
@@ -1236,9 +1236,57 @@ function renderBody(){
         // 아직 아무것도 입력 안 된 칸에는 흐린 "+ 항목 추가" 안내 글자를 보여줌 (CSS: .empty-hint)
         td.innerHTML = `<div class="empty-hint">+ 항목 추가</div>`;
       } else {
-        const shown = items.slice(0, 2); // 칸 안에는 최대 2개 항목만 미리보기로 보여줌
-        // ★ "타이틀: 내용" 형식으로 표시 (itemDisplayLabel 함수가 조합해줌). 팝업을 열면 타이틀/내용을 각각 볼 수 있음
-        let html = shown.map(it => {
+        // ★ [수정됨] 예전엔 최대 2개까지만 미리보기로 보여주고 나머지는 "+N개 더보기" 버튼으로 숨겼는데,
+        // 이제는 항목이 몇 개든 전부 다 보여줌. 항목이 많으면 그만큼 이 칸(td)의 세로 높이가 자연스럽게
+        // 커지고, 표 전체는 어차피 .grid-wrap이 스크롤 되니까 문제 없음.
+        //
+        // ★ [수정됨] 같은 프로젝트(타이틀)에 대해 여러 단계(모델링/도면/랜더링 등)를 각각 따로 입력해두면,
+        // 예전엔 "프로젝트 - 모델링 100%" / "프로젝트 - 도면 100%" / "프로젝트 - 랜더링 100%" 처럼
+        // 프로젝트명이 반복되는 3줄로 나뉘어 보였습니다. 이제는 같은 프로젝트끼리는 한 줄로 모아서
+        // "프로젝트 - 모델링 100%, 도면 100%, 랜더링 100%" 형태로 보여줍니다.
+        // (다른 프로젝트는 여전히 줄이 따로 나뉘어 보입니다 - 프로젝트명이 다르면 합치지 않음)
+
+        // (1) 프로젝트별로 "단계가 있는 항목"들을 미리 모아둠 (title -> 그 프로젝트의 단계 항목 배열)
+        const stageGroups = new Map();
+        items.forEach(it => {
+          const t = (it.title || '').trim();
+          const stages = it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+          if(t && stages.length > 0){
+            if(!stageGroups.has(t)) stageGroups.set(t, []);
+            stageGroups.get(t).push(it);
+          }
+        });
+
+        // (2) 원래 항목 순서를 그대로 따라가면서, "단계가 있는 프로젝트"는 그 프로젝트가 처음 나올 때
+        // 딱 한 번만 (그 프로젝트의 모든 단계를 합쳐서) 한 줄로 만들고, 그 다음에 또 나오는 같은 프로젝트의
+        // 단계 항목은 이미 합쳐서 보여줬으므로 건너뜀. 단계가 없는 항목(제목만 있거나 메모만 있는 경우)은
+        // 예전처럼 한 줄씩 그대로 보여줌.
+        const renderedTitles = new Set();
+        let html = items.map(it => {
+          const title = (it.title || '').trim();
+          const stages = it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+
+          if(title && stages.length > 0){
+            if(renderedTitles.has(title)) return ''; // 이미 이 프로젝트는 한 줄로 합쳐서 출력했으므로 건너뜀
+            renderedTitles.add(title);
+            const group = stageGroups.get(title);
+            // 이 프로젝트의 단계들을 "단계명 진행률%" 형태로 각각 만들고, 콤마로 이어붙임
+            const segments = group.map(g => {
+              const gStages = g.stage ? String(g.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+              const stageLabel = gStages.join(' / ');
+              const contentPart = (g.content || '').trim() ? `(${g.content.trim()})` : ''; // 내용이 있으면 괄호로 덧붙임
+              const pct = (g.progress !== null && g.progress !== undefined) ? ` ${g.progress}%` : '';
+              return `${stageLabel}${contentPart}${pct}`;
+            });
+            const label = `${title} - ${segments.join(', ')}`;
+            return `
+          <div class="log-item">
+            <span class="dot">·</span>
+            <span class="txt" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+          </div>`;
+          }
+
+          // 단계가 없는 항목(제목만 있거나, 메모/내용만 있는 경우)은 예전 방식 그대로 한 줄씩 표시
           const label = itemDisplayLabel(it);
           return `
           <div class="log-item">
@@ -1246,10 +1294,7 @@ function renderBody(){
             <span class="txt" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
             ${it.progress !== null && it.progress !== undefined ? `<span class="pct">${it.progress}%</span>` : ''}
           </div>`;
-        }).join('');
-        if(items.length > 2){
-          html += `<div class="more-link">+${items.length - 2}개 더보기</div>`;
-        }
+        }).filter(Boolean).join('');
         td.innerHTML = html;
       }
       tr.appendChild(td);
@@ -1598,6 +1643,32 @@ function openModal({ title, bodyHtml, footerHtml, onMount }){
 }
 
 /* ============================================================
+   ★ [추가됨] 어떤 인원의 특정 "프로젝트+단계"에 대해, 예전에 마지막으로 입력했던 진행률(%)이
+   몇이었는지 찾아주는 함수.
+   - 팝업에서 오늘 항목의 단계를 새로 선택할 때, 진행률 칸이 비어있으면 이 값을 자동으로 채워줘서
+     "지난번에 몇 %까지 했는지 기억이 안 나는" 문제를 해결하기 위해 씀.
+   - 검색 범위는 loadMonthData()가 불러와둔 전체 범위(loadedHistoryStart ~ 이번 달 끝)이고,
+     그 안에서 날짜 순서대로 훑어서 "가장 최근에 입력된 값"을 찾음(더 최근 날짜가 있으면 그걸로 덮어씀).
+   ============================================================ */
+function findLastKnownStageProgress(empId, project, stageName){
+  if(!project || !stageName || !loadedHistoryStart) return null;
+  const rangeEnd = weekEnd(startOfWeek(monthLastDate(currentYear, currentMonth)));
+  const totalDays = Math.round((rangeEnd - loadedHistoryStart) / 86400000) + 1;
+  let found = null;
+  for(let i=0; i<totalDays; i++){
+    const dateStr = toDateStr(addDays(loadedHistoryStart, i));
+    const dayItems = logsByEmpDate[`${empId}_${dateStr}`] || [];
+    dayItems.forEach(it => {
+      if(it.progress === null || it.progress === undefined) return;
+      if((it.title || '').trim() !== project) return;
+      const stages = it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+      if(stages.includes(stageName)) found = it.progress; // 날짜 순서대로 훑으므로, 더 최근 값이 있으면 계속 덮어써짐
+    });
+  }
+  return found;
+}
+
+/* ============================================================
    모달: 하루 업무 상세 (날짜 칸을 클릭하면 뜨는 팝업)
    ============================================================ */
 function openDayModal(emp, date){
@@ -1646,7 +1717,7 @@ function openDayModal(emp, date){
         </div>
 
         <div class="field">
-          <label>프로젝트 진행 단계 <span style="font-weight:400;color:var(--muted);">(오늘 작업한 단계를 눌러서 선택/해제)</span></label>
+          <label>프로젝트 진행 단계 <span style="font-weight:400;color:var(--muted);">(오늘 작업한 단계 하나를 선택하세요 - 다른 걸 누르면 자동으로 바뀝니다)</span></label>
           <div class="tag-wrap" id="stagePicker-${idx}"></div>
         </div>
 
@@ -1735,12 +1806,36 @@ function openDayModal(emp, date){
       <button type="button" class="stage-chip${selected.includes(s) ? ' active' : ''}" data-stage-name="${escapeHtml(s)}">${escapeHtml(s)}</button>
     `).join('');
 
-    // 단추 클릭 = 즉시 선택 토글 (누르면 바로 선택, 다시 누르면 바로 해제)
+    // 단추 클릭 = 단일 선택 (다른 단계를 누르면 그 단계 하나만 선택되고, 이전에 선택돼있던 건 자동으로 해제됨.
+    // 이미 선택된 단계를 다시 누르면 선택이 풀림 - 즉 "라디오 버튼"처럼 동작)
     wrap.querySelectorAll('.stage-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.dataset.stageName;
         const cur = items[idx].stages || [];
-        items[idx].stages = cur.includes(name) ? cur.filter(s => s !== name) : [...cur, name];
+        const turningOn = !cur.includes(name); // 지금 누르는 게 "선택"인지("해제"가 아니라) 확인
+        // ★ [수정됨] 예전엔 여러 단계를 한꺼번에 선택할 수 있었는데(배열에 계속 추가),
+        // 이제는 한 번에 "딱 하나의 단계"만 선택되도록 함. 새 단계를 누르면 그것 하나만 남고,
+        // 이미 선택돼있던 단계를 다시 누르면 완전히 해제(빈 배열)됨.
+        items[idx].stages = turningOn ? [name] : [];
+
+        // ★ 단계를 새로 "선택"할 때, 진행률 칸이 (1) 아직 완전히 비어있거나,
+        // (2) 방금 전 다른 단계를 선택해서 "자동으로 채워진 값"이 그대로 남아있는 경우에는,
+        // 지금 새로 선택한 단계의 마지막 진행률로 다시 채워줍니다.
+        // (예: 도면을 눌러서 40이 자동으로 채워진 다음, 모델링을 누르면 100으로 다시 바뀜)
+        // 단, 사람이 진행률 칸에 직접 타이핑해서 값을 고친 경우에는(_autoFilled가 false로 바뀜)
+        // 더 이상 자동으로 덮어쓰지 않고 그 값을 그대로 존중합니다.
+        if(turningOn && (items[idx].progress === null || items[idx].progress === undefined || items[idx].progress === '' || items[idx]._autoFilled)){
+          const project = (items[idx].title || '').trim();
+          const lastKnown = findLastKnownStageProgress(emp.id, project, name);
+          if(lastKnown !== null){
+            items[idx].progress = lastKnown;
+            items[idx]._autoFilled = true; // 이 값은 "자동으로 채워진 값"이라고 표시해둠
+            // renderStagePicker()는 진행률 입력칸까지 다시 그리진 않으므로, 화면에 보이는 입력창 값도 직접 갱신해줌
+            const progInput = document.querySelector(`input[data-field="progress"][data-idx="${idx}"]`);
+            if(progInput) progInput.value = lastKnown;
+          }
+        }
+
         renderStagePicker(idx);
       });
     });
@@ -1837,6 +1932,9 @@ function openDayModal(emp, date){
       el.addEventListener('input', () => {
         const v = el.value === '' ? null : Math.max(0, Math.min(100, Number(el.value))); // 0~100 사이로만 값을 제한
         items[el.dataset.idx].progress = v;
+        // 사람이 진행률 칸을 직접 고쳤으므로, 더 이상 "자동으로 채워진 값"이 아님 -> 앞으로 다른 단계를
+        // 선택해도 이 값을 함부로 덮어쓰지 않도록 표시를 지움
+        items[el.dataset.idx]._autoFilled = false;
       });
     });
     document.querySelectorAll('[data-remove]').forEach(el => {
