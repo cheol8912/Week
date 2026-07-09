@@ -504,7 +504,10 @@
   }
   /* 실제 팝업 흰색 박스(카드) 자체 */
   .modal-panel{
-    background:#fff; border-radius:12px; width:100%; max-width:460px; /* 팝업 최대 가로폭 460px */
+    background:#fff; border-radius:12px; width:100%; max-width:560px; /* 팝업 최대 가로폭 460px -> 560px로 넓힘.
+      ※ 프로젝트명 자동완성(datalist) 목록의 가로폭은 브라우저가 "그 입력창 자체의 너비"에 맞춰 그리기 때문에,
+      팝업/입력창을 넓히는 것이 자동완성 목록을 넓히는 가장 확실한 방법입니다(자동완성 목록만 따로 넓히는
+      CSS 속성은 따로 없음). */
     max-height:86vh; overflow-y:auto; /* 팝업 내용이 화면보다 길면 팝업 안에서만 위아래 스크롤 */
     box-shadow:0 20px 50px rgba(0,0,0,0.25); /* 팝업 아래에 은은한 그림자 효과를 줘서 붕 떠 보이게 함 */
   }
@@ -541,6 +544,65 @@
   .field textarea{ min-height:64px; resize:vertical; } /* 여러 줄 입력창(textarea)은 세로로만 크기 조절 가능하게 */
   .field-row{ display:flex; gap:10px; }          /* 입력창 두 개를 가로로 나란히 배치할 때 쓰는 줄 */
   .field-row .field{ flex:1; }
+
+  /* ========================================================================
+     ★ [추가됨] 프로젝트명 자동완성 - 직접 만든 드롭다운 (브라우저 기본 datalist 대체)
+     - 예전엔 <input list="..."> + <datalist>라는 브라우저 기본 기능을 썼는데, 이건 크롬이
+       "입력창과 똑같은 폭"으로 목록을 그리고, 그 폭보다 긴 글자는 강제로 "..."로 잘라버립니다.
+       이 폭/줄바꿈은 CSS로 전혀 손댈 수 없는 브라우저 내부 UI라서, 프로젝트명이 길면 다 안 보이는
+       문제가 있었습니다.
+     - 그래서 진짜 <datalist>를 쓰지 않고, 그냥 평범한 <div>로 "드롭다운처럼 보이는" 목록을 직접
+       만들었습니다. 이러면 폭(width), 줄바꿈 여부, 글자 크기까지 전부 우리 마음대로 정할 수 있어서,
+       프로젝트명이 아무리 길어도 절대 안 잘리고 다 보이게 만들 수 있습니다.
+     ======================================================================== */
+  /* 입력창 + 드롭다운을 한 덩어리로 묶는 바깥 상자. position:relative를 줘야 안의 드롭다운이
+     "이 상자 기준"으로 바로 아래에 위치하게 됩니다(position:absolute는 relative인 부모를 기준으로 움직임). */
+  .autocomplete-wrap{ position:relative; }
+  .autocomplete-dropdown{
+    display:none; /* 평소엔 숨겨져 있다가, JS가 '.show' class를 붙이면 나타남 */
+    position:absolute;
+    top:calc(100% + 4px); /* 입력창 바로 아래(입력창 높이 + 4px 간격)에 위치 */
+    left:0;
+    min-width:100%;      /* 최소한 입력창 너비만큼은 확보 */
+    width:max-content;   /* ★ 핵심: 목록 중 가장 긴 글자에 맞춰 폭이 자동으로 늘어남 (네이티브 datalist는 이게 안 됐음) */
+    max-width:480px;      /* 그래도 화면 밖으로 너무 많이 삐져나가지 않도록 최대 폭은 제한 */
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.15); /* 붕 떠 보이도록 은은한 그림자 */
+    z-index:200; /* 팝업 안의 다른 요소들보다 위에 그려지도록 함 */
+    max-height:220px;
+    overflow-y:auto; /* 후보가 아주 많아지면 목록 안에서만 스크롤 */
+  }
+  .autocomplete-dropdown.show{ display:block; }
+  .autocomplete-item{
+    padding:9px 12px;
+    font-size:13.5px;
+    cursor:pointer;
+    white-space:normal;   /* 글자를 안 자르고, 폭이 부족하면 자연스럽게 줄바꿈되도록 함 (핵심: "..." 생략 없음) */
+    word-break:break-word;
+    border-bottom:1px solid var(--line);
+  }
+  .autocomplete-item:last-child{ border-bottom:none; }
+  .autocomplete-item:hover{ background:var(--blueprint-bg); } /* 마우스를 올리면 살짝 파란 배경으로 강조 */
+
+  /* ========================================================================
+     ★ [추가됨] 단계별 진행률 입력 행 - "프로젝트 진행 단계"에서 체크한 단계 개수만큼 이 줄이 생김
+     예: [100] 모델링 진행률(%)  /  [100] 랜더링 진행률(%)  /  [50] 도면 진행률(%)
+     ======================================================================== */
+  .stage-progress-row{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:8px;
+  }
+  .stage-progress-row input{
+    width:70px; flex-shrink:0;
+    padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+    font-family:var(--sans); font-size:13.5px; background:#fff;
+  }
+  .stage-progress-row label{
+    font-size:13px; color:var(--ink); font-weight:500;
+  }
+  .stage-progress-empty-hint{ font-size:12px; color:var(--muted); } /* 단계를 하나도 안 골랐을 때 살짝 보여주는 안내 문구 */
 
   /* ★ 프로젝트/작업단계 선택줄 - <select> 드롭다운과 "+ 관리" 버튼을 가로로 나란히 배치 */
   .select-with-manage{ display:flex; align-items:center; gap:8px; }
@@ -1651,6 +1713,29 @@ function openModal({ title, bodyHtml, footerHtml, onMount }){
 }
 
 /* ============================================================
+   ★ [추가됨] 프로젝트명 자동완성 드롭다운을 채워주는 함수
+   - 이 인원이 최근에 썼던 프로젝트명 목록(projectOptions.recentProjectsByEmployee) 중에서,
+     지금 입력창에 타이핑된 글자(query)가 포함된 것만 걸러서 보여줌 (대소문자 구분 없음)
+   - query가 비어있으면(아직 아무것도 안 쳤으면) 최근 프로젝트명 전체를 보여줌
+   ============================================================ */
+function renderTitleAutocomplete(idx, query){
+  const dropdown = document.getElementById(`titleAutocomplete-${idx}`);
+  if(!dropdown) return;
+  const empId = dropdown.dataset.empId; // 아래 itemsHtml()에서 data-emp-id로 심어둔 값
+  const list = (projectOptions.recentProjectsByEmployee && projectOptions.recentProjectsByEmployee[empId]) || [];
+  const q = (query || '').trim().toLowerCase();
+  const filtered = q ? list.filter(p => p.toLowerCase().includes(q)) : list;
+
+  if(filtered.length === 0){
+    dropdown.classList.remove('show');
+    dropdown.innerHTML = '';
+    return;
+  }
+  dropdown.innerHTML = filtered.map(p => `<div class="autocomplete-item" data-value="${escapeHtml(p)}">${escapeHtml(p)}</div>`).join('');
+  dropdown.classList.add('show');
+}
+
+/* ============================================================
    ★ [추가됨] 어떤 인원의 특정 "프로젝트+단계"에 대해, 예전에 마지막으로 입력했던 진행률(%)이
    몇이었는지 찾아주는 함수.
    - 팝업에서 오늘 항목의 단계를 새로 선택할 때, 진행률 칸이 비어있으면 이 값을 자동으로 채워줘서
@@ -1684,15 +1769,38 @@ function openDayModal(emp, date){
   const key = `${emp.id}_${dateStr}`;
   // 기존 데이터를 그대로 수정하지 않도록 "복사본"을 만들어서 편집용으로 사용
   // (팝업에서 "취소"를 누르면 이 복사본은 버려지고, 원래 데이터는 그대로 유지됨)
-  // [수정됨] DB에는 stage가 "제작모델링,제작도면" 처럼 콤마로 합쳐진 글자 하나로 저장되는데,
-  // 편집 중에는 다루기 쉽도록 배열(stages)로 풀어서 사용함.
-  let items = JSON.parse(JSON.stringify(logsByEmpDate[key] || [])).map(it => ({
-    ...it,
-    stages: it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : []
-  }));
+  //
+  // ★ [수정됨] DB에는 여전히 "한 행 = 프로젝트 하나 + 단계 하나 + 그 단계의 진행률 하나"로 저장됩니다
+  // (기존 주간정리/월간정리 누적 계산 로직과 100% 호환되도록 이 구조는 그대로 유지함).
+  // 다만 화면(팝업)에서는 "같은 프로젝트면 한 카드로 모아서" 보여주고, 그 카드 안에서 단계를
+  // 여러 개 체크하면 단계마다 진행률 입력칸이 따로 생기도록 만들었습니다. 그래서 여기서
+  // DB에서 불러온 행들을 "프로젝트명(title) 기준으로 묶어서" items 배열을 다시 구성합니다.
+  const rawRows = JSON.parse(JSON.stringify(logsByEmpDate[key] || []));
+  let items = [];
+  const groupIndexByTitle = new Map(); // title -> items 배열에서 몇 번째로 묶였는지
+  rawRows.forEach(row => {
+    const t = (row.title || '').trim();
+    const rowStages = row.stage ? String(row.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+    if(t && rowStages.length > 0){
+      // 프로젝트명이 있고 단계도 있는 행 -> 같은 프로젝트명끼리 하나의 카드로 묶음
+      if(!groupIndexByTitle.has(t)){
+        groupIndexByTitle.set(t, items.length);
+        items.push({ title: t, stages: [], stageProgress: {}, content: '', progress: null, _isNew: false, _autoFilledStages: {} });
+      }
+      const g = items[groupIndexByTitle.get(t)];
+      rowStages.forEach(s => {
+        if(!g.stages.includes(s)) g.stages.push(s);
+        g.stageProgress[s] = (row.progress !== null && row.progress !== undefined) ? row.progress : null;
+      });
+      if(!g.content && row.content) g.content = row.content; // 내용(메모)은 여러 행 중 하나에만 저장돼있어도 카드에 반영되도록 함
+    } else {
+      // 단계가 없는 행(자유 메모, 또는 제목만 있는 경우)은 예전처럼 카드 하나 = 행 하나로 유지
+      items.push({ title: t, stages: [], stageProgress: {}, content: row.content || '', progress: (row.progress ?? null), _isNew: false, _autoFilledStages: {} });
+    }
+  });
   if(items.length === 0){
     // 항목이 하나도 없으면, 버튼을 또 누를 필요 없이 바로 빈 입력창을 하나 보여줌
-    items.push({ title: '', stages: [], content: '', progress: null, _isNew: true });
+    items.push({ title: '', stages: [], stageProgress: {}, content: '', progress: null, _isNew: true, _autoFilledStages: {} });
   }
 
   // 항목별로 "작업단계 관리 모드"가 켜져있는지 기억해두는 곳 (idx -> true/false). 평소엔 꺼져있음.
@@ -1712,7 +1820,12 @@ function openDayModal(emp, date){
 
         <div class="field">
           <label>프로젝트 타이틀</label>
-          <input type="text" data-field="title" data-idx="${idx}" value="${escapeHtml(it.title || '')}" placeholder="예: GS-W805, 주_25031" list="projectNamesDatalist" />
+          <div class="autocomplete-wrap">
+            <input type="text" data-field="title" data-idx="${idx}" value="${escapeHtml(it.title || '')}" placeholder="예: GS-W805, 주_25031" autocomplete="off" />
+            <!-- ★ 자동완성 후보 목록이 뜨는 자리. 평소엔 비어있고 숨겨져 있다가(display:none),
+                 입력창에 포커스하거나 타이핑할 때 JS(renderTitleAutocomplete)가 이 안을 채우고 보여줌. -->
+            <div class="autocomplete-dropdown" id="titleAutocomplete-${idx}" data-emp-id="${emp.id}"></div>
+          </div>
         </div>
 
         <div class="field">
@@ -1725,7 +1838,7 @@ function openDayModal(emp, date){
         </div>
 
         <div class="field">
-          <label>프로젝트 진행 단계 <span style="font-weight:400;color:var(--muted);">(오늘 작업한 단계 하나를 선택하세요 - 다른 걸 누르면 자동으로 바뀝니다)</span></label>
+          <label>프로젝트 진행 단계 <span style="font-weight:400;color:var(--muted);">(오늘 작업한 단계를 모두 선택하세요 - 선택한 단계마다 아래에 진행률 입력칸이 생깁니다)</span></label>
           <div class="tag-wrap" id="stagePicker-${idx}"></div>
         </div>
 
@@ -1733,11 +1846,11 @@ function openDayModal(emp, date){
           <label>내용 (선택)</label>
           <textarea data-field="content" data-idx="${idx}">${escapeHtml(it.content || '')}</textarea>
         </div>
-        <div class="field" style="max-width:120px;margin-bottom:0;">
-          <label>진행률 (%)</label>
-          <input type="number" min="0" max="100" data-field="progress" data-idx="${idx}"
-                 value="${it.progress ?? ''}" placeholder="선택입력" />
-        </div>
+
+        <!-- ★ [수정됨] 예전엔 "진행률(%)" 입력칸이 항목당 딱 하나였는데, 이제는 위에서 선택한 단계
+             개수만큼 입력칸이 여기 자동으로 생깁니다 (예: 모델링/도면/랜더링 3개를 선택했으면
+             진행률 입력칸도 3개). 단계를 하나도 안 골랐으면(자유 메모 등) 예전처럼 칸 하나만 보여줌. -->
+        <div id="stageProgressList-${idx}"></div>
       </div>
     `).join('');
   }
@@ -1745,11 +1858,6 @@ function openDayModal(emp, date){
   const close = openModal({
     title,
     bodyHtml: `
-      <!-- 프로젝트 타이틀 자동완성 후보 목록 - 이 인원(${escapeHtml(emp.name)})이 최근에 사용했던 프로젝트명(최대 5개)만 후보로 뜸.
-           인원마다 하는 일이 다르니, 다른 사람의 프로젝트명은 안 섞여서 나옵니다. -->
-      <datalist id="projectNamesDatalist">
-        ${((projectOptions.recentProjectsByEmployee && projectOptions.recentProjectsByEmployee[emp.id]) || []).map(p => `<option value="${escapeHtml(p)}">`).join('')}
-      </datalist>
       <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
         <button type="button" class="manage-btn" id="clearRecentProjectsBtn">최근 자동완성 기록 지우기</button>
       </div>
@@ -1765,7 +1873,7 @@ function openDayModal(emp, date){
     onMount: (close) => {
       bindItemEvents();
       document.getElementById('addItemBtn').addEventListener('click', () => {
-        items.push({ title: '', stages: [], content: '', progress: null, _isNew: true });
+        items.push({ title: '', stages: [], stageProgress: {}, content: '', progress: null, _isNew: true, _autoFilledStages: {} });
         refreshItemsContainer();
       });
       // "최근 자동완성 기록 지우기" - 이 인원의 최근 프로젝트명 기록만 지움 (실제 업무 기록은 안 지워짐)
@@ -1774,8 +1882,8 @@ function openDayModal(emp, date){
         if(!projectOptions.recentProjectsByEmployee) projectOptions.recentProjectsByEmployee = {};
         projectOptions.recentProjectsByEmployee[emp.id] = [];
         await saveProjectOptions();
-        const dl = document.getElementById('projectNamesDatalist');
-        if(dl) dl.innerHTML = ''; // 화면에서도 즉시 후보 목록을 비움
+        // 지금 열려있는 자동완성 드롭다운이 있다면 전부 닫고 비움 (다음에 열 때 어차피 빈 목록이 뜨지만, 즉시 반영해줌)
+        document.querySelectorAll('.autocomplete-dropdown').forEach(d => { d.classList.remove('show'); d.innerHTML = ''; });
         showToast('최근 자동완성 기록을 지웠습니다');
       });
       document.getElementById('cancelDayBtn').addEventListener('click', close);
@@ -1814,37 +1922,87 @@ function openDayModal(emp, date){
       <button type="button" class="stage-chip${selected.includes(s) ? ' active' : ''}" data-stage-name="${escapeHtml(s)}">${escapeHtml(s)}</button>
     `).join('');
 
-    // 단추 클릭 = 단일 선택 (다른 단계를 누르면 그 단계 하나만 선택되고, 이전에 선택돼있던 건 자동으로 해제됨.
-    // 이미 선택된 단계를 다시 누르면 선택이 풀림 - 즉 "라디오 버튼"처럼 동작)
+    // ★ [수정됨] 단추 클릭 = 복수 선택 (체크박스처럼 동작). 여러 단계를 동시에 선택할 수 있고,
+    // 선택한 단계 개수만큼 아래 진행률 입력칸이 자동으로 생깁니다(renderStageProgressList 참고).
     wrap.querySelectorAll('.stage-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.dataset.stageName;
         const cur = items[idx].stages || [];
         const turningOn = !cur.includes(name); // 지금 누르는 게 "선택"인지("해제"가 아니라) 확인
-        // ★ [수정됨] 예전엔 여러 단계를 한꺼번에 선택할 수 있었는데(배열에 계속 추가),
-        // 이제는 한 번에 "딱 하나의 단계"만 선택되도록 함. 새 단계를 누르면 그것 하나만 남고,
-        // 이미 선택돼있던 단계를 다시 누르면 완전히 해제(빈 배열)됨.
-        items[idx].stages = turningOn ? [name] : [];
+        items[idx].stages = turningOn ? [...cur, name] : cur.filter(s => s !== name);
 
-        // ★ 단계를 새로 "선택"할 때, 진행률 칸이 (1) 아직 완전히 비어있거나,
-        // (2) 방금 전 다른 단계를 선택해서 "자동으로 채워진 값"이 그대로 남아있는 경우에는,
-        // 지금 새로 선택한 단계의 마지막 진행률로 다시 채워줍니다.
-        // (예: 도면을 눌러서 40이 자동으로 채워진 다음, 모델링을 누르면 100으로 다시 바뀜)
-        // 단, 사람이 진행률 칸에 직접 타이핑해서 값을 고친 경우에는(_autoFilled가 false로 바뀜)
-        // 더 이상 자동으로 덮어쓰지 않고 그 값을 그대로 존중합니다.
-        if(turningOn && (items[idx].progress === null || items[idx].progress === undefined || items[idx].progress === '' || items[idx]._autoFilled)){
-          const project = (items[idx].title || '').trim();
-          const lastKnown = findLastKnownStageProgress(emp.id, project, name);
-          if(lastKnown !== null){
-            items[idx].progress = lastKnown;
-            items[idx]._autoFilled = true; // 이 값은 "자동으로 채워진 값"이라고 표시해둠
-            // renderStagePicker()는 진행률 입력칸까지 다시 그리진 않으므로, 화면에 보이는 입력창 값도 직접 갱신해줌
-            const progInput = document.querySelector(`input[data-field="progress"][data-idx="${idx}"]`);
-            if(progInput) progInput.value = lastKnown;
+        if(!items[idx].stageProgress) items[idx].stageProgress = {};
+        if(!items[idx]._autoFilledStages) items[idx]._autoFilledStages = {};
+
+        if(turningOn){
+          // ★ 단계를 새로 "선택"할 때, 그 단계의 진행률 칸이 (1) 아직 비어있거나 (2) 자동으로
+          // 채워진 값이 그대로 남아있는 경우, 이 프로젝트·단계에 마지막으로 입력했던 %를 자동으로 채움.
+          // 사람이 그 칸을 직접 고친 적이 있으면(_autoFilledStages[단계]가 false) 더 이상 안 건드림.
+          const cur2 = items[idx].stageProgress[name];
+          if(cur2 === null || cur2 === undefined || cur2 === '' || items[idx]._autoFilledStages[name]){
+            const project = (items[idx].title || '').trim();
+            const lastKnown = findLastKnownStageProgress(emp.id, project, name);
+            if(lastKnown !== null){
+              items[idx].stageProgress[name] = lastKnown;
+              items[idx]._autoFilledStages[name] = true;
+            }
           }
+        } else {
+          // 선택 해제하면 그 단계의 진행률 값/자동채움 표시도 같이 지움 (입력칸 자체가 화면에서 사라지므로)
+          delete items[idx].stageProgress[name];
+          delete items[idx]._autoFilledStages[name];
         }
 
         renderStagePicker(idx);
+        renderStageProgressList(idx); // 선택된 단계 개수가 바뀌었으니 진행률 입력칸 목록도 다시 그림
+      });
+    });
+  }
+
+  // ★ [추가됨] "프로젝트 진행 단계"에서 체크한 단계 개수만큼 진행률 입력칸을 그려주는 함수.
+  // - 단계를 하나도 안 골랐으면(자유 메모 등) 예전처럼 "진행률(%)" 칸 하나만 보여줌.
+  // - 단계를 하나 이상 골랐으면, 그 단계 이름을 라벨로 붙인 입력칸이 단계 개수만큼 나란히 생김.
+  function renderStageProgressList(idx){
+    const wrap = document.getElementById(`stageProgressList-${idx}`);
+    if(!wrap) return;
+    const stages = items[idx].stages || [];
+    const stageProgress = items[idx].stageProgress || {};
+
+    if(stages.length === 0){
+      wrap.innerHTML = `
+        <div class="field" style="max-width:160px;margin-bottom:0;">
+          <label>진행률 (%) <span style="font-weight:400;color:var(--muted);">(선택)</span></label>
+          <input type="number" min="0" max="100" data-field="progress" data-idx="${idx}"
+                 value="${items[idx].progress ?? ''}" placeholder="선택입력" />
+        </div>`;
+    } else {
+      wrap.innerHTML = stages.map(s => {
+        const v = (stageProgress[s] !== null && stageProgress[s] !== undefined) ? stageProgress[s] : '';
+        return `
+        <div class="stage-progress-row">
+          <input type="number" min="0" max="100" data-field="stageProgress" data-idx="${idx}" data-stage="${escapeHtml(s)}" value="${v}" placeholder="선택입력" />
+          <label>${escapeHtml(s)} 진행률(%)</label>
+        </div>`;
+      }).join('');
+    }
+
+    // 방금 새로 그려진 입력칸들에 이벤트를 연결함 (input 이벤트가 걸려있어야 타이핑한 값이 저장됨)
+    wrap.querySelectorAll('[data-field="progress"]').forEach(el => {
+      el.addEventListener('input', () => {
+        const v = el.value === '' ? null : Math.max(0, Math.min(100, Number(el.value)));
+        items[idx].progress = v;
+      });
+    });
+    wrap.querySelectorAll('[data-field="stageProgress"]').forEach(el => {
+      el.addEventListener('input', () => {
+        const v = el.value === '' ? null : Math.max(0, Math.min(100, Number(el.value)));
+        const stageName = el.dataset.stage;
+        if(!items[idx].stageProgress) items[idx].stageProgress = {};
+        items[idx].stageProgress[stageName] = v;
+        // 사람이 이 칸을 직접 고쳤으므로, 더 이상 "자동으로 채워진 값"이 아님 -> 앞으로 이 단계를
+        // 다시 선택해도(해제했다 재선택 등) 이 값을 함부로 덮어쓰지 않도록 표시를 지움
+        if(!items[idx]._autoFilledStages) items[idx]._autoFilledStages = {};
+        items[idx]._autoFilledStages[stageName] = false;
       });
     });
   }
@@ -1929,22 +2087,51 @@ function openDayModal(emp, date){
   // 항목 입력창(프로젝트/내용/진행률)에 반응하거나, 단계 선택기·추가 버튼을 누를 때 반응하도록 이벤트를 연결
   function bindItemEvents(){
     document.querySelectorAll('[data-field="title"]').forEach(el => {
-      el.addEventListener('input', () => { items[el.dataset.idx].title = el.value; });
+      const idx = el.dataset.idx;
+      el.addEventListener('input', () => {
+        items[idx].title = el.value;
+        renderTitleAutocomplete(idx, el.value); // 타이핑할 때마다 후보 목록을 다시 걸러서 보여줌
+      });
+      // 입력창에 포커스가 들어오는 순간(클릭해서 커서를 놓는 순간)에도 후보 목록을 보여줌
+      // (아직 아무것도 안 쳤으면 "최근에 쓴 프로젝트명 전체"가 뜨고, 이미 글자가 있으면 그 글자로 걸러진 목록이 뜸)
+      el.addEventListener('focus', () => renderTitleAutocomplete(idx, el.value));
+      // 다른 곳을 클릭해서 포커스가 벗어나면 목록을 숨김.
+      // ★ setTimeout으로 살짝(150ms) 늦게 숨기는 이유: 드롭다운 항목을 "클릭"하는 순간에도 blur가
+      // 먼저 발생하는데, 그 즉시 숨겨버리면 클릭 이벤트가 도착하기도 전에 목록이 사라져서 선택이 안 됨.
+      // 아래 드롭다운 쪽 mousedown에서 e.preventDefault()로 blur 자체를 막아주기도 하지만,
+      // 혹시 모를 경우를 대비한 이중 안전장치.
+      el.addEventListener('blur', () => {
+        setTimeout(() => {
+          const dropdown = document.getElementById(`titleAutocomplete-${idx}`);
+          if(dropdown) dropdown.classList.remove('show');
+        }, 150);
+      });
       // 프로젝트명 입력을 마치면(포커스를 벗어나면) "프로젝트 진행 구성" 영역이 보이거나 내용이 바뀔 수 있으므로 다시 그림
       el.addEventListener('change', () => refreshItemsContainer());
+    });
+
+    // ★ 자동완성 드롭다운 안의 후보를 클릭했을 때 - 그 값을 입력창에 채워넣고 목록을 닫음
+    document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+      dropdown.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if(!item) return;
+        // mousedown 시점에 미리 막아서, 입력창의 blur가 발생해 드롭다운이 먼저 숨겨지는 걸 방지함
+        e.preventDefault();
+        const idx = dropdown.id.replace('titleAutocomplete-', '');
+        const value = item.dataset.value;
+        const input = document.querySelector(`input[data-field="title"][data-idx="${idx}"]`);
+        if(input) input.value = value;
+        items[idx].title = value;
+        dropdown.classList.remove('show');
+        refreshItemsContainer(); // "프로젝트 진행 구성" 영역을 새 프로젝트명 기준으로 다시 그림
+      });
     });
     document.querySelectorAll('[data-field="content"]').forEach(el => {
       el.addEventListener('input', () => { items[el.dataset.idx].content = el.value; });
     });
-    document.querySelectorAll('[data-field="progress"]').forEach(el => {
-      el.addEventListener('input', () => {
-        const v = el.value === '' ? null : Math.max(0, Math.min(100, Number(el.value))); // 0~100 사이로만 값을 제한
-        items[el.dataset.idx].progress = v;
-        // 사람이 진행률 칸을 직접 고쳤으므로, 더 이상 "자동으로 채워진 값"이 아님 -> 앞으로 다른 단계를
-        // 선택해도 이 값을 함부로 덮어쓰지 않도록 표시를 지움
-        items[el.dataset.idx]._autoFilled = false;
-      });
-    });
+    // ★ [수정됨] "진행률(%)" 입력칸들은 이제 stageProgressList-${idx} 안에서 동적으로 만들어지고,
+    // renderStageProgressList(idx) 함수 안에서 자체적으로 이벤트를 연결하므로 여기서는 따로 안 함
+    // (이 시점엔 아직 stageProgressList 안이 비어있어서 바인딩해도 소용없기도 함).
     document.querySelectorAll('[data-remove]').forEach(el => {
       el.addEventListener('click', () => {
         // [기능] 항목 삭제: 배열에서 해당 항목을 지우고 화면을 다시 그림
@@ -1966,6 +2153,7 @@ function openDayModal(emp, date){
     items.forEach((it, idx) => {
       renderStageConfigPicker(idx);
       renderStagePicker(idx);
+      renderStageProgressList(idx); // 선택된 단계 개수만큼 진행률 입력칸을 그려줌
     });
   }
 
@@ -1989,19 +2177,44 @@ function openDayModal(emp, date){
     try {
       await sb(`work_logs?department=eq.${DEPT_Q}&employee_id=eq.${emp.id}&log_date=eq.${dateStr}`, 'DELETE'); // 기존 항목 전체 삭제
 
-      // DB에 저장할 데이터(payload)를 먼저 만들어둠. try 블록 바깥에서도 쓸 수 있도록 이 스코프에 선언.
+      // ★ [수정됨] 화면(카드)에서는 "프로젝트 하나 = 카드 하나 (단계 여러 개 포함 가능)"이지만,
+      // 실제 DB에는 예전과 똑같이 "한 행 = 단계 하나 + 그 단계의 진행률 하나"로 나눠서 저장합니다.
+      // (이렇게 해야 기존 주간정리/월간정리 누적 계산, 달력 칸의 "프로젝트별 한 줄 합치기" 표시 로직을
+      // 전혀 안 건드리고 그대로 재사용할 수 있음). 내용(메모)은 같은 프로젝트의 여러 행 중 "첫 번째
+      // 단계 행"에만 붙여서, 달력 칸에 내용이 중복으로 여러 번 나타나지 않도록 함.
       let payload = [];
       if (validItems.length > 0) {
-        payload = validItems.map((it, i) => ({
-          employee_id: emp.id,
-          log_date: dateStr,
-          department: DEPARTMENT_ID, // 이 부서 소속임을 표시 (다른 부서 화면에서는 이 값 때문에 안 보임)
-          title: (it.title || '').trim() || null,   // 프로젝트명. 비어있으면 null (자유 메모)
-          stage: (it.stages && it.stages.length > 0) ? it.stages.join(STAGE_SEP) : null, // 선택된 단계들을 특수 구분자로 합쳐서 저장 (이름에 쉼표가 있어도 안전)
-          content: (it.content || '').trim() || null,
-          progress: it.progress,
-          sort_order: i // 이 순서 번호가 항목이 화면에 나열되는 순서를 정함
-        }));
+        let sortOrder = 0;
+        validItems.forEach(it => {
+          const t = (it.title || '').trim() || null;
+          if(it.stages && it.stages.length > 0){
+            it.stages.forEach((stageName, sIdx) => {
+              const pct = (it.stageProgress && it.stageProgress[stageName] !== undefined) ? it.stageProgress[stageName] : null;
+              payload.push({
+                employee_id: emp.id,
+                log_date: dateStr,
+                department: DEPARTMENT_ID,
+                title: t,
+                stage: stageName, // 이 행에는 단계 하나만 저장 (기존 계산 로직과 동일한 모양)
+                content: sIdx === 0 ? ((it.content || '').trim() || null) : null, // 내용은 첫 단계 행에만
+                progress: pct,
+                sort_order: sortOrder++
+              });
+            });
+          } else {
+            // 단계를 하나도 안 고른 항목(자유 메모 등)은 예전처럼 행 하나로 저장
+            payload.push({
+              employee_id: emp.id,
+              log_date: dateStr,
+              department: DEPARTMENT_ID,
+              title: t,
+              stage: null,
+              content: (it.content || '').trim() || null,
+              progress: (it.progress !== null && it.progress !== undefined) ? it.progress : null,
+              sort_order: sortOrder++
+            });
+          }
+        });
         await sb('work_logs', 'POST', payload); // 새 항목들을 한꺼번에 저장
       }
 
