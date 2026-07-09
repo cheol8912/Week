@@ -1490,14 +1490,42 @@ function buildProgressSummaryLines(dayItemsList){
   // 그 등록된 개수(n)를 분모로 쓰고, 아직 입력 안 한 단계는 0%로 계산함.
   // (예: 4단계짜리 프로젝트인데 1단계만 80% 입력 -> (80+0+0+0)/4 = 20%)
   // 아직 등록 안 된(예전 방식) 프로젝트는 예전처럼 "실제로 입력된 단계 개수"만으로 계산함.
+  //
+  // ★ [추가됨] 예전엔 "프로젝트명 100%"처럼 전체 평균(롤업)만 한 줄로 보여줘서, 그 프로젝트가
+  // 어떤 단계들로 이루어져 있고 단계별로 몇 %씩인지는 알 수 없었습니다. 그래서 이제는 롤업 % 바로
+  // 아래에, 그 프로젝트의 단계별 진행률을 풀어서 한 줄 더 보여줍니다.
+  // 예) A (100%)
+  //       1 (100%), 2 (100%), 3 (100%)
+  //
+  // ★ [수정됨] 단계가 "1개뿐인" 프로젝트는 위처럼 두 줄(롤업+세부내역)로 나눌 필요가 없어서,
+  // 대신 일(day) 칸에 표시되는 것과 똑같은 형식인 "· 프로젝트 - 단계명 진행률%"로 한 줄만 보여줍니다.
+  // (예: "· 주 26036 NZ_242402 ... - 매뉴얼 및 체크리스트 100%") 이러면 일 칸과 주간정리를
+  // 나란히 봤을 때 같은 프로젝트가 똑같은 모양으로 보여서 알아보기 쉽습니다.
   projectFirstSeen.forEach(project => {
     const stageMap = projectStageProgress.get(project);
     const registered = (projectOptions.projectStages && projectOptions.projectStages[project]) || null;
     const denomStages = (registered && registered.length > 0) ? registered : Array.from(stageMap.keys());
+
+    if(denomStages.length <= 1){
+      // 단계가 1개(또는 0개-사실상 있을 수 없지만 방어적으로 처리)뿐인 프로젝트
+      const stageName = denomStages[0] || Array.from(stageMap.keys())[0] || '';
+      const value = stageMap.has(stageName) ? stageMap.get(stageName) : 0;
+      lines.push(`· ${project} - ${stageName} ${value}%`);
+      return; // 이 프로젝트는 여기서 끝 (아래 롤업/세부내역 두 줄짜리 형식은 건너뜀)
+    }
+
     let sum = 0;
     denomStages.forEach(stageName => { sum += stageMap.has(stageName) ? stageMap.get(stageName) : 0; }); // 등록됐지만 미입력이면 0으로 계산
-    const rollup = denomStages.length > 0 ? Math.round(sum / denomStages.length) : 0;
-    lines.push(`${project} ${rollup}%`);
+    const rollup = Math.round(sum / denomStages.length);
+    lines.push(`${project} (${rollup}%)`);
+
+    // 단계별 진행률을 "단계명 (진행률%)" 형태로 나열하고, 앞에 살짝 들여쓰기(2칸)를 줘서
+    // 위 프로젝트 롤업 줄의 "하위 항목"처럼 보이게 함
+    // (이 아래로 내려오는 건 이미 denomStages.length > 1 인 경우로 걸러진 뒤라서 별도 조건 확인 없이 바로 만듦)
+    const breakdown = denomStages
+      .map(stageName => `${stageName} (${stageMap.has(stageName) ? stageMap.get(stageName) : 0}%)`)
+      .join(', ');
+    lines.push(`  ${breakdown}`);
   });
 
   // 단계 없는 단순 항목들 (예전 방식 호환)
