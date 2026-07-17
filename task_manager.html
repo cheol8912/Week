@@ -122,36 +122,47 @@ body{
 }
 .add-btn:hover{background:var(--blueprint-strong);border-color:var(--blueprint-strong);}
 
-/* 초기 업로드 버튼 */
-.import-btn{
-  background:#E8F5E9;color:#2E7D52;border:1px solid #A5D6A7;
-  font-size:13px;padding:8px 14px;border-radius:7px;cursor:pointer;
-  font-family:var(--sans);font-weight:600;
-  display:inline-flex;align-items:center;gap:4px;
-  white-space:nowrap;transition:background .15s;
-}
-.import-btn:hover{background:#C8E6C9;}
+/* 초기 업로드 버튼 삭제됨 */
 
 /* ==============================================================
-   요약 카드 (업무 탭)
+   상태 필터 버튼 바
+   클릭 시 해당 상태만 필터링, 활성화된 버튼은 채워진 스타일
 ============================================================== */
-.summary-bar{
-  display:flex;gap:10px;flex-wrap:wrap;
-  background:#fff;border-bottom:1px solid var(--line);
+.filter-bar{
+  display:flex; gap:7px; flex-wrap:wrap;
+  background:#fff; border-bottom:1px solid var(--line);
   padding:8px 20px;
 }
-.sum-card{
-  display:flex;align-items:center;gap:7px;
-  padding:5px 13px;border-radius:20px;
-  font-size:13px;font-weight:600;
-  background:var(--paper);border:1px solid var(--line);
+/* 기본 상태 버튼 */
+.flt-btn{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 13px; border-radius:20px; font-size:13px; font-weight:600;
+  border:1.5px solid var(--line); background:#fff; color:var(--muted);
+  cursor:pointer; transition:all .15s; white-space:nowrap; user-select:none;
 }
-.sum-card .num{font-size:15px;font-weight:700;}
-.sum-card.done{background:#EAF4FB;border-color:#B3D9F0;color:#1565C0;}
-.sum-card.ing{background:var(--plan-bg);border-color:#C9B8F0;color:var(--plan);}
-.sum-card.hold{background:#FFF8E1;border-color:#FFD54F;color:#B7770D;}
-.sum-card.cont{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D52;}
-.sum-card.req{background:#FFEBEE;border-color:#FFCDD2;color:var(--danger);}
+.flt-btn .flt-num{ font-size:14px; font-weight:700; }
+.flt-btn:hover{ border-color:#B0BEC5; color:var(--ink); }
+/* 활성화(선택된) 상태 */
+.flt-btn.active{ color:#fff; border-color:transparent; }
+/* 전체 */
+.flt-btn.all          { }
+.flt-btn.all.active   { background:#334155; border-color:#334155; }
+/* 완료 */
+.flt-btn.done         { color:#1565C0; border-color:#B3D9F0; background:#EAF4FB; }
+.flt-btn.done.active  { background:#1565C0; border-color:#1565C0; color:#fff; }
+/* 진행중 */
+.flt-btn.ing          { color:var(--plan); border-color:#C9B8F0; background:var(--plan-bg); }
+.flt-btn.ing.active   { background:var(--plan); border-color:var(--plan); color:#fff; }
+/* 지속진행 */
+.flt-btn.cont         { color:#2E7D52; border-color:#A5D6A7; background:#E8F5E9; }
+.flt-btn.cont.active  { background:#2E7D52; border-color:#2E7D52; color:#fff; }
+/* 보류 */
+.flt-btn.hold         { color:#B7770D; border-color:#FFD54F; background:#FFF8E1; }
+.flt-btn.hold.active  { background:#B7770D; border-color:#B7770D; color:#fff; }
+/* 요청 */
+.flt-btn.req          { color:var(--danger); border-color:#FFCDD2; background:#FFEBEE; }
+.flt-btn.req.active   { background:var(--danger); border-color:var(--danger); color:#fff; }
+@media(max-width:480px){ .filter-bar{padding:6px 14px;} }
 
 /* ==============================================================
    탭 패널
@@ -225,18 +236,109 @@ tbody td:last-child{border-right:none;}
 .btn-row-edit:hover{background:var(--blueprint-bg);color:var(--blueprint);border-color:var(--blueprint);}
 
 /* ==============================================================
-   경비 탭 예산 현황 바
+   연도 선택 탭 (헤더 오른쪽)
 ============================================================== */
-.budget-bar{
-  background:#fff;border-bottom:1px solid var(--line);
-  padding:12px 20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+.year-tab-group{
+  display:flex; align-items:center; gap:4px; flex-shrink:0;
 }
-.budget-item .bl{font-size:11px;color:var(--muted);margin-bottom:2px;}
-.budget-item .bv{font-size:16px;font-weight:700;color:var(--ink);}
-.budget-item .bv.spent{color:var(--danger);}
-.budget-item .bv.remain{color:#2E7D52;}
-.progress-wrap{flex:1;min-width:160px;background:#EEF1F5;border-radius:20px;height:8px;overflow:hidden;}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--blueprint),var(--plan));border-radius:20px;transition:width .5s ease;}
+.year-tab{
+  padding:4px 12px; border-radius:20px; font-size:13px; font-weight:600;
+  border:1.5px solid var(--line); background:#fff; color:var(--muted);
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.year-tab:hover{ border-color:var(--blueprint); color:var(--blueprint); }
+.year-tab.active{ background:var(--blueprint); border-color:var(--blueprint); color:#fff; }
+.year-new-btn{
+  padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;
+  border:1.5px dashed var(--blueprint); background:transparent; color:var(--blueprint);
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.year-new-btn:hover{ background:var(--blueprint-bg); }
+
+/* ==============================================================
+   경비사용내역 — 카드 방식 (max-width 900px 중앙 정렬)
+============================================================== */
+.exp-wrap{
+  flex:1; overflow-y:auto; padding:20px;
+  display:flex; flex-direction:column; align-items:center;
+}
+/* 예산 현황 카드 */
+.budget-summary{
+  width:100%; max-width:1400px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  margin-bottom:16px;
+}
+.budget-card{
+  background:#fff; border:1px solid var(--line); border-radius:10px;
+  padding:14px 18px;
+}
+.budget-card .bc-label{ font-size:11px; color:var(--muted); margin-bottom:4px; }
+.budget-card .bc-value{ font-size:18px; font-weight:700; color:var(--ink); }
+.budget-card .bc-value.spent{ color:var(--danger); }
+.budget-card .bc-value.remain{ color:#2E7D52; }
+/* 집행률 프로그레스 */
+.budget-progress-card{
+  width:100%; max-width:1400px;
+  background:#fff; border:1px solid var(--line); border-radius:10px;
+  padding:12px 18px; margin-bottom:16px;
+  display:flex; align-items:center; gap:14px;
+}
+.budget-progress-card .bp-label{ font-size:12px; color:var(--muted); white-space:nowrap; }
+.budget-progress-card .bp-bar-wrap{
+  flex:1; background:#EEF1F5; border-radius:20px; height:8px; overflow:hidden;
+}
+.budget-progress-card .bp-fill{
+  height:100%; background:linear-gradient(90deg,var(--blueprint),var(--plan));
+  border-radius:20px; transition:width .5s;
+}
+.budget-progress-card .bp-rate{ font-size:14px; font-weight:700; color:var(--ink); white-space:nowrap; }
+/* 경비 툴바 */
+.exp-toolbar{
+  width:100%; max-width:1400px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-bottom:12px; flex-wrap:wrap;
+}
+/* 경비 테이블 컨테이너 */
+.exp-table-wrap{
+  width:100%; max-width:1400px;
+  background:#fff; border:1px solid var(--line); border-radius:10px;
+  overflow:hidden;
+}
+.exp-table-wrap table{
+  width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed;
+}
+.exp-table-wrap thead th{
+  background:#F0F4FA; padding:9px 8px;
+  font-size:12px; font-weight:700; color:var(--blueprint);
+  text-align:center; border-bottom:2px solid var(--line);
+  white-space:normal; word-break:keep-all;  /* ★ nowrap 제거 — 헤더가 폭을 강제 확장하지 않음 */
+}
+.exp-table-wrap tbody tr{ border-bottom:1px solid #EEF1F5; transition:background .1s; position:relative; }
+.exp-table-wrap tbody tr:last-child{ border-bottom:none; }
+.exp-table-wrap tbody tr:hover{ background:var(--blueprint-bg); }
+.exp-table-wrap tbody td{ padding:0; vertical-align:middle; }
+/* 비고 셀 — 삭제 버튼이 hover 시 오른쪽에 나타남 */
+.exp-note-cell{ position:relative; }
+.exp-del-btn{
+  display:none; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:#CBD5E1; cursor:pointer; font-size:14px; padding:2px 4px;
+  transition:color .1s; line-height:1;
+}
+.exp-del-btn:hover{ color:var(--danger); }
+.exp-table-wrap tbody tr:hover .exp-del-btn{ display:block; }
+/* "+ 경비 추가" 버튼 행 */
+.exp-add-row-btn{
+  width:100%; padding:10px;
+  background:#fff; border:none;
+  color:var(--blueprint); font-size:13px; font-weight:600; font-family:var(--sans);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  transition:background .12s;
+}
+.exp-add-row-btn:hover{ background:var(--blueprint-bg); }
+@media(max-width:768px){
+  .budget-summary{ grid-template-columns:repeat(2,1fr); }
+  .exp-wrap{ padding:12px; }
+}
 
 /* ==============================================================
    빈 데이터
@@ -307,7 +409,6 @@ tbody td:last-child{border-right:none;}
   .toolbar{padding:8px 14px;}
   .search-input{width:130px;}
   .tab{padding:12px 14px;font-size:13px;}
-  .summary-bar{padding:6px 14px;}
   .budget-bar{padding:10px 14px;gap:12px;}
 }
 
@@ -629,7 +730,10 @@ tbody tr.editing-row { background:#FFFDE7 !important; }
 <div class="header">
   <h1>📋 <span>기술전략팀</span> 업무관리</h1>
   <div class="header-right">
-    <span class="app-version">v2.0 · 260717</span>
+    <!-- 연도 선택 탭 — 클릭 시 해당 연도 데이터만 표시 -->
+    <div class="year-tab-group" id="yearTabGroup"></div>
+    <button class="year-new-btn" onclick="addNewYear()" title="새 연도 시작">+ 연도 추가</button>
+    <span class="app-version">v3.0 · 260717</span>
     <div class="sync-status">
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncText">연결중...</span>
@@ -652,35 +756,37 @@ tbody tr.editing-row { background:#FFFDE7 !important; }
 
   <!-- ======== 업무일정표 패널 ======== -->
   <div class="tab-panel active" id="panel-task">
-    <!-- 요약 카드 -->
-    <div class="summary-bar">
-      <div class="sum-card done"><span class="num" id="cnt-done">-</span> 완료</div>
-      <div class="sum-card ing"><span class="num" id="cnt-ing">-</span> 진행중</div>
-      <div class="sum-card hold"><span class="num" id="cnt-hold">-</span> 보류</div>
-      <div class="sum-card cont"><span class="num" id="cnt-cont">-</span> 지속진행</div>
-      <div class="sum-card req"><span class="num" id="cnt-req">-</span> 요청</div>
-      <div class="sum-card" style="margin-left:auto"><span class="num" id="cnt-all">-</span> 전체</div>
+    <!-- 상태 필터 버튼 바 (클릭 시 해당 상태만 필터링) -->
+    <div class="filter-bar">
+      <button class="flt-btn all active" id="flt-all"  onclick="setStatusFilter('')">
+        <span class="flt-num" id="cnt-all">-</span> 전체
+      </button>
+      <button class="flt-btn req"  id="flt-req"  onclick="setStatusFilter('요청')">
+        📌 <span class="flt-num" id="cnt-req">-</span> 요청
+      </button>
+      <button class="flt-btn ing"  id="flt-ing"  onclick="setStatusFilter('진행중')">
+        🔄 <span class="flt-num" id="cnt-ing">-</span> 진행중
+      </button>
+      <button class="flt-btn cont" id="flt-cont" onclick="setStatusFilter('지속')">
+        ♻️ <span class="flt-num" id="cnt-cont">-</span> 지속진행
+      </button>
+      <button class="flt-btn hold" id="flt-hold" onclick="setStatusFilter('보류')">
+        ⏸ <span class="flt-num" id="cnt-hold">-</span> 보류
+      </button>
+      <button class="flt-btn done" id="flt-done" onclick="setStatusFilter('완료')">
+        ✅ <span class="flt-num" id="cnt-done">-</span> 완료
+      </button>
     </div>
     <!-- 툴바 -->
     <div class="toolbar">
       <div class="toolbar-left">
         <input class="search-input" id="taskSearch" placeholder="🔍 업무명·담당자·출고지 검색" oninput="renderTask()">
-        <select class="filter-sel" id="fStatus" onchange="renderTask()">
-          <option value="">전체 상태</option>
-          <option value="완료">✅ 완료</option>
-          <option value="진행중">🔄 진행중</option>
-          <option value="보류">⏸ 보류</option>
-          <option value="지속">♻️ 지속진행</option>
-          <option value="요청">📌 요청</option>
-        </select>
         <select class="filter-sel" id="fLead" onchange="renderTask()">
           <option value="">전체 담당자</option>
           <option>주종현</option><option>정재철</option><option>김태훈</option><option>이미녕</option>
         </select>
       </div>
       <div class="toolbar-right">
-        <button class="import-btn" onclick="importInitialData()">📥 초기데이터 업로드</button>
-        <!-- "+ 업무 추가" 버튼은 표 맨 위 가로 전체 버튼으로 옮겼습니다 -->
         <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">↻ 새로고침</button>
       </div>
     </div>
@@ -692,27 +798,41 @@ tbody tr.editing-row { background:#FFFDE7 !important; }
 
   <!-- ======== 경비사용내역 패널 ======== -->
   <div class="tab-panel" id="panel-expense">
-    <!-- 예산 현황 -->
-    <div class="budget-bar">
-      <div class="budget-item"><div class="bl">총 배정금액</div><div class="bv" id="bTotal">-</div></div>
-      <div class="budget-item"><div class="bl">집행금액</div><div class="bv spent" id="bSpent">-</div></div>
-      <div class="budget-item"><div class="bl">미집행 잔액</div><div class="bv remain" id="bRemain">-</div></div>
-      <div class="budget-item"><div class="bl">집행률</div><div class="bv" id="bRate">-</div></div>
-      <div class="progress-wrap"><div class="progress-fill" id="bBar" style="width:0%"></div></div>
-    </div>
-    <!-- 툴바 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <input class="search-input" id="expSearch" placeholder="🔍 항목·비고 검색" oninput="renderExpense()">
+    <div class="exp-wrap" id="expWrap">
+      <!-- 예산 현황 카드 4개 -->
+      <div class="budget-summary">
+        <div class="budget-card">
+          <div class="bc-label">총 배정금액</div>
+          <div class="bc-value" id="bTotal">-</div>
+        </div>
+        <div class="budget-card">
+          <div class="bc-label">집행금액</div>
+          <div class="bc-value spent" id="bSpent">-</div>
+        </div>
+        <div class="budget-card">
+          <div class="bc-label">미집행 잔액</div>
+          <div class="bc-value remain" id="bRemain">-</div>
+        </div>
+        <div class="budget-card">
+          <div class="bc-label">집행률</div>
+          <div class="bc-value" id="bRate">-</div>
+        </div>
       </div>
-      <div class="toolbar-right">
-        <button class="add-btn" onclick="openAddExpenseModal()">+ 경비 추가</button>
+      <!-- 집행률 프로그레스 바 -->
+      <div class="budget-progress-card">
+        <span class="bp-label">집행 현황</span>
+        <div class="bp-bar-wrap"><div class="bp-fill" id="bBar" style="width:0%"></div></div>
+        <span class="bp-rate" id="bRateBar">0%</span>
+      </div>
+      <!-- 툴바 -->
+      <div class="exp-toolbar">
+        <input class="search-input" id="expSearch" placeholder="🔍 항목·비고 검색" oninput="renderExpense()">
         <button class="refresh-btn" onclick="refreshAll()">↻ 새로고침</button>
       </div>
-    </div>
-    <!-- 테이블 -->
-    <div class="table-wrap" id="expTableWrap">
-      <div class="empty-msg">⏳ 데이터를 불러오는 중...</div>
+      <!-- 경비 테이블 -->
+      <div class="exp-table-wrap" id="expTableWrap">
+        <div class="empty-msg">⏳ 데이터를 불러오는 중...</div>
+      </div>
     </div>
   </div>
 
@@ -740,9 +860,11 @@ const H = {
 ============================================================ */
 let taskData = [];   // 서버에서 불러온 전체 업무 데이터
 let expData  = [];   // 서버에서 불러온 전체 경비 데이터
-/* editingTaskId 는 더 이상 쓰지 않습니다 — 이제 셀 단위로 편집하므로
-   '지금 어느 행이 편집중인지' 기억할 필요가 없어졌습니다. */
-let editingExpId  = null;  // 현재 인라인 편집 중인 경비 행 ID
+let editingExpId = null;  // 현재 인라인 편집 중인 경비 행 ID
+
+/* 연도 관련 — activeYear: 현재 보고 있는 연도 */
+let activeYear = new Date().getFullYear();   /* 기본값: 올해 */
+let availableYears = [];                      /* DB에 존재하는 연도 목록 */
 
 /* ============================================================
    컬럼 정의 — 전역 배열 COL_DEFS
@@ -900,18 +1022,33 @@ function optsFor(type){
 ============================================================ */
 async function init(){
   setSyncStatus('loading','로딩중...');
+  /* 각 로드를 독립적으로 try-catch — 하나 실패해도 나머지는 계속 */
+  await loadOptions();
+  await loadYears();
+
+  /* 업무 데이터 로드 */
   try{
-    /* ★ 옵션을 가장 먼저 불러와야 함
-       (뱃지 색상·드롭다운 목록이 전부 옵션에 의존하므로)
-       loadOptions 내부에서 오류를 처리하므로 여기선 throw 안 됩니다 */
-    await loadOptions();
-    /* 옵션 로드와 무관하게 업무/경비 데이터는 항상 불러옵니다 */
-    await Promise.all([loadTasks(), loadExpenses()]);
-    setSyncStatus('ok','연결됨');
-  } catch(e){
-    setSyncStatus('error','오류');
-    toast('❌ '+e.message);
+    await loadTasks();
+  }catch(e){
+    console.error('loadTasks 실패:', e);
+    taskData = [];
+    renderTask();
+    updateSummary();
+    toast('⚠️ 업무 데이터 로드 실패: '+e.message);
   }
+
+  /* 경비 데이터 로드 */
+  try{
+    await loadExpenses();
+  }catch(e){
+    console.error('loadExpenses 실패:', e);
+    expData = [];
+    renderExpense();
+    updateBudget();
+    toast('⚠️ 경비 데이터 로드 실패: '+e.message);
+  }
+
+  setSyncStatus('ok','연결됨');
 }
 
 /* ============================================================
@@ -1015,11 +1152,106 @@ function mkOpts(opts, cur, empty=''){
    업무일정표 데이터 로드 (Supabase → taskData 배열)
 ============================================================ */
 async function loadTasks(){
-  const res = await fetch(SB_URL+'/rest/v1/task_schedule?order=created_at.asc', {headers:H});
+  /* year 컬럼이 DB에 있으면 해당 연도만, 없으면 전체를 가져옵니다.
+     컬럼이 없을 때 Supabase는 400을 반환하므로 폴백으로 전체 로드합니다. */
+  let res = await fetch(
+    SB_URL+'/rest/v1/task_schedule?year=eq.'+activeYear+'&order=created_at.asc',
+    {headers:H}
+  );
+  /* year 컬럼 없음(400) → 전체 로드로 폴백 */
+  if(!res.ok){
+    res = await fetch(
+      SB_URL+'/rest/v1/task_schedule?order=created_at.asc',
+      {headers:H}
+    );
+  }
   if(!res.ok) throw new Error('task load fail');
   taskData = await res.json();
   renderTask();
   updateSummary();
+}
+
+/* ============================================================
+   ★ 연도 관리 ★
+============================================================ */
+
+/* DB에 존재하는 연도 목록 조회 */
+async function loadYears(){
+  try{
+    const res = await fetch(
+      SB_URL+'/rest/v1/task_schedule?select=year&order=year.asc',
+      {headers:{...H, 'Prefer':'count=none'}}
+    );
+    /* year 컬럼이 없거나 오류 → 현재 연도만 탭으로 표시하고 계속 진행 */
+    if(!res.ok){
+      availableYears = [activeYear];
+      renderYearTabs();
+      return;
+    }
+    const rows = await res.json();
+    const years = [...new Set(rows.map(r=>r.year).filter(Boolean))].sort();
+    if(!years.includes(activeYear)) years.push(activeYear);
+    availableYears = years.sort();
+    activeYear = availableYears[availableYears.length-1];
+    renderYearTabs();
+  }catch(e){
+    availableYears = [activeYear];
+    renderYearTabs();
+  }
+}
+
+/* 연도 탭 버튼 렌더링 */
+function renderYearTabs(){
+  const wrap = document.getElementById('yearTabGroup');
+  if(!wrap) return;
+  wrap.innerHTML = availableYears.map(y=>
+    '<button class="year-tab'+(y===activeYear?' active':'')+'" onclick="setYear('+y+')">'+y+'</button>'
+  ).join('');
+}
+
+/* 연도 전환 — 클릭 시 해당 연도 데이터 다시 로드 */
+async function setYear(y){
+  if(activeYear === y) return;
+  activeYear = y;
+  renderYearTabs();
+  setSyncStatus('loading','로딩중...');
+  try{
+    await Promise.all([loadTasks(), loadExpenses()]);
+    setSyncStatus('ok','연결됨');
+  }catch(e){ setSyncStatus('error','오류'); }
+}
+
+/* 새 연도 추가 버튼 — 다음 연도를 목록에 추가하고 전환 */
+async function addNewYear(){
+  const nextYear = Math.max(...availableYears) + 1;
+  if(!confirm(nextYear+'년을 새로 시작합니다.\n업무·경비 데이터는 비어있는 상태로 시작됩니다.\n계속할까요?')) return;
+  if(!availableYears.includes(nextYear)) availableYears.push(nextYear);
+  availableYears.sort();
+  activeYear = nextYear;
+  renderYearTabs();
+  /* 새 연도엔 데이터가 없으므로 빈 상태로 렌더 */
+  taskData = [];
+  expData = [];
+  renderTask();
+  renderExpense();
+  updateSummary();
+  updateBudget();
+  toast('✅ '+nextYear+'년이 추가됐습니다. 업무·경비를 새로 추가해주세요.');
+}
+
+/* ============================================================
+   상태 필터 — 전역 변수로 관리 (기존 select#fStatus 대체)
+============================================================ */
+let activeStatusFilter = '';
+
+function setStatusFilter(val){
+  activeStatusFilter = val;
+  const map = { '':'all', '요청':'req', '진행중':'ing', '지속':'cont', '보류':'hold', '완료':'done' };
+  Object.entries(map).forEach(([k, cls])=>{
+    const btn = document.getElementById('flt-'+cls);
+    if(btn) btn.classList.toggle('active', k === val);
+  });
+  renderTask();
 }
 
 /* ============================================================
@@ -1029,7 +1261,7 @@ function updateSummary(){
   const c={done:0,ing:0,hold:0,cont:0,req:0};
   taskData.forEach(t=>{
     const s=(t.status||'').toLowerCase();
-    if(s.includes('완료'))      c.done++;
+    if(s.includes('완료'))       c.done++;
     else if(s.includes('진행중')) c.ing++;
     else if(s.includes('보류'))  c.hold++;
     else if(s.includes('지속'))  c.cont++;
@@ -1095,9 +1327,13 @@ function sortIcon(col){
    - 헤더 클릭: 해당 컬럼 기준 정렬
 ============================================================ */
 function renderTask(){
-  const search=(document.getElementById('taskSearch').value||'').toLowerCase();
-  const fSt=document.getElementById('fStatus').value;
-  const fLd=document.getElementById('fLead').value;
+  /* DOM 요소가 없으면 조용히 종료 (탭 전환 전 호출 시 방어) */
+  const wrap = document.getElementById('taskTableWrap');
+  if(!wrap) return;
+
+  const search=((document.getElementById('taskSearch')||{value:''}).value||'').toLowerCase();
+  const fSt = activeStatusFilter;
+  const fLd=((document.getElementById('fLead')||{value:''}).value||'');
 
   // 필터 적용
   let filtered=taskData.filter(t=>{
@@ -1133,7 +1369,7 @@ function renderTask(){
 
   /* 조건에 맞는 게 없어도 "추가" 버튼은 보여야 하므로 표는 항상 그립니다 */
   if(!filtered.length){
-    document.getElementById('taskTableWrap').innerHTML=
+    wrap.innerHTML=
       '<table><thead>'+addBtnRow+'</thead></table>'
       +'<div class="empty-msg">📭 조건에 맞는 업무가 없습니다.</div>';
     return;
@@ -1234,7 +1470,7 @@ function renderTask(){
   });
 
   html+='</tbody></table>';
-  document.getElementById('taskTableWrap').innerHTML=html;
+  wrap.innerHTML=html;
 
   /* 표를 새로 그렸으니 컬럼 폭 조절 손잡이도 다시 붙임 */
   initColResize();
@@ -1372,7 +1608,7 @@ async function quickAddTask(){
   try{
     const res = await fetch(SB_URL+'/rest/v1/task_schedule',
       {method:'POST', headers:{...H,'Prefer':'return=representation'},
-       body:JSON.stringify({status:firstStatus})});
+       body:JSON.stringify({status:firstStatus, year:activeYear})});
     if(!res.ok) throw new Error(await res.text());
     const [created] = await res.json();
     taskData.push(created);
@@ -1493,16 +1729,32 @@ async function addTask(){
 /* ============================================================
    경비사용내역 로드
 ============================================================ */
+/* ============================================================
+   경비사용내역 로드
+============================================================ */
 async function loadExpenses(){
-  const res=await fetch(SB_URL+'/rest/v1/dept_expense?order=seq.asc',{headers:H});
-  if(!res.ok) throw new Error('expense load fail');
-  expData=await res.json();
+  try{
+    /* year 컬럼이 있으면 해당 연도만, 없으면(400) 전체 로드 폴백 */
+    let res = await fetch(
+      SB_URL+'/rest/v1/dept_expense?year=eq.'+activeYear+'&order=seq.asc',
+      {headers:H}
+    );
+    if(!res.ok){
+      res = await fetch(SB_URL+'/rest/v1/dept_expense?order=seq.asc',{headers:H});
+    }
+    if(!res.ok) throw new Error(await res.text());
+    expData = await res.json();
+  }catch(e){
+    console.error('경비 로드 실패:', e);
+    expData = [];
+    toast('⚠️ 경비 데이터 로드 실패');
+  }
   renderExpense();
   updateBudget();
 }
 
 /* ============================================================
-   예산 현황 바 업데이트
+   예산 현황 카드 업데이트
 ============================================================ */
 function updateBudget(){
   const TOTAL=1080000;
@@ -1513,165 +1765,242 @@ function updateBudget(){
   document.getElementById('bSpent').textContent=fmtMoney(spent);
   document.getElementById('bRemain').textContent=fmtMoney(remain);
   document.getElementById('bRate').textContent=rate+'%';
+  if(document.getElementById('bRateBar'))
+    document.getElementById('bRateBar').textContent=rate+'%';
   document.getElementById('bBar').style.width=rate+'%';
 }
 
 /* ============================================================
-   경비 테이블 렌더링 (인라인 편집)
+   경비 테이블 렌더링 — 셀 단위 편집 방식 (업무탭과 동일)
+   - 날짜: <input type="date"> 상시 노출
+   - 경비항목: 드롭다운 dd-popup
+   - 금액/비고: contenteditable
+   - 번호/한도/잔액: 읽기전용
 ============================================================ */
+const EXP_TYPES = ['식사','커피','교통','물품구입','기타'];
+
 function renderExpense(){
-  const search=(document.getElementById('expSearch').value||'').toLowerCase();
+  const expWrap = document.getElementById('expTableWrap');
+  if(!expWrap) return;
+  const search=((document.getElementById('expSearch')||{value:''}).value||'').toLowerCase();
   const filtered=expData.filter(e=>!search
     ||(e.expense_type||'').toLowerCase().includes(search)
     ||(e.note||'').toLowerCase().includes(search));
 
-  if(!filtered.length){
-    document.getElementById('expTableWrap').innerHTML='<div class="empty-msg">📭 경비 내역이 없습니다.</div>';
-    return;
-  }
+  const addBtn = '<tr><td colspan="8" style="padding:0;border:none">'
+    +'<button class="exp-add-row-btn" onclick="quickAddExp()">'
+    +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">'
+    +'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+    +'경비 추가</button></td></tr>';
 
-  const expTypes=['식사','커피','교통','물품구입','기타'];
-
-  let html='<table><thead><tr>'
-    +'<th style="min-width:44px">번호</th>'
-    +'<th style="min-width:100px">사용일자</th>'
-    +'<th style="min-width:76px">경비항목</th>'
-    +'<th style="min-width:70px">참석인원</th>'
-    +'<th style="min-width:108px">경비한도</th>'
-    +'<th style="min-width:108px">금차 집행액</th>'
-    +'<th style="min-width:108px">사용 후 잔액</th>'
-    +'<th style="min-width:140px">비고(사용목적)</th>'
-    +'<th style="min-width:44px">삭제</th>'
+  let html='<table><colgroup>'
+    +'<col style="width:5%"><col style="width:13%"><col style="width:11%">'
+    +'<col style="width:8%"><col style="width:13%"><col style="width:12%">'
+    +'<col style="width:12%"><col style="width:26%">'
+    +'</colgroup>'
+    +'<thead>'+addBtn+'<tr>'
+    +'<th>번호</th><th>사용일자</th><th>경비항목</th>'
+    +'<th>참석<br>인원</th><th>경비한도</th><th>집행액</th>'
+    +'<th>잔액</th><th>비고</th>'
     +'</tr></thead><tbody>';
 
-  filtered.forEach(e=>{
-    const isEdit=editingExpId===e.id;
-    if(isEdit){
-      html+='<tr class="editing-row" id="erow-'+e.id+'">'
-        +'<td><div class="cell-view" style="color:var(--muted);justify-content:center">'+(e.seq||'-')+'</div></td>'
-        +'<td><input class="cell-input" type="date" id="eed-'+e.id+'" value="'+(e.used_date||'')+'" onchange="autoSaveExp(\''+e.id+'\')"></td>'
-        +'<td><select class="cell-select" id="eet-'+e.id+'" onchange="autoSaveExp(\''+e.id+'\')">'
-        +mkOpts(expTypes,e.expense_type)+'</select></td>'
-        +'<td><input class="cell-input" type="number" id="eea-'+e.id+'" value="'+(e.attendees||'')+'" placeholder="명" min="1" onblur="autoSaveExp(\''+e.id+'\')"></td>'
-        +'<td><div class="cell-view" style="color:var(--muted);justify-content:flex-end">'+fmtMoney(e.budget_limit)+'</div></td>'
-        +'<td><input class="cell-input" type="number" id="eem-'+e.id+'" value="'+(e.amount||'')+'" placeholder="금액" onblur="autoSaveExp(\''+e.id+'\')"></td>'
-        +'<td><div class="cell-view" style="color:#2E7D52;font-weight:600;justify-content:flex-end">'+fmtMoney(e.balance)+'</div></td>'
-        +'<td><input class="cell-input" id="een-'+e.id+'" value="'+esc(e.note)+'" placeholder="사용목적" onblur="autoSaveExp(\''+e.id+'\')"></td>'
-        +'<td style="text-align:center;padding:5px 6px"><button class="btn-row-del" onclick="deleteExp(\''+e.id+'\')">🗑</button></td>'
-        +'</tr>';
-    } else {
-      const ecv=(c,s='')=>'<div class="cell-view" onclick="startEditExp(\''+e.id+'\')" style="cursor:pointer;'+s+'">'+c+'</div>';
-      html+='<tr id="erow-'+e.id+'">'
-        +'<td>'+ecv(e.seq||'-','color:var(--muted);justify-content:center;font-size:12px')+'</td>'
-        +'<td>'+ecv(e.used_date?e.used_date.replace(/-/g,'.'):'-','font-size:12px;justify-content:center')+'</td>'
-        +'<td>'+ecv('<span class="badge '+(e.expense_type==='식사'?'b-ing':e.expense_type==='커피'?'b-cont':'')+'">'+(e.expense_type||'-')+'</span>','justify-content:center')+'</td>'
-        +'<td>'+ecv(e.attendees?e.attendees+'명':'-','justify-content:center')+'</td>'
-        +'<td>'+ecv(fmtMoney(e.budget_limit),'color:var(--muted);justify-content:flex-end;font-size:12px')+'</td>'
-        +'<td>'+ecv(fmtMoney(e.amount),'color:var(--danger);font-weight:600;justify-content:flex-end')+'</td>'
-        +'<td>'+ecv(fmtMoney(e.balance),'color:#2E7D52;font-weight:600;justify-content:flex-end')+'</td>'
-        +'<td>'+ecv(esc(e.note)||'-')+'</td>'
-        +'<td style="text-align:center;padding:5px 6px"><button class="btn-row-del" onclick="deleteExp(\''+e.id+'\')">🗑</button></td>'
-        +'</tr>';
-    }
-  });
+  if(!filtered.length){
+    html+='<tr><td colspan="8"><div class="empty-msg">📭 경비 내역이 없습니다.</div></td></tr>';
+  } else {
+    const TC={
+      '식사':  {bg:'#F3EEFC',fg:'#7C5CBF'},
+      '커피':  {bg:'#E8F5E9',fg:'#2E7D32'},
+      '교통':  {bg:'#E3F2FD',fg:'#1565C0'},
+      '물품구입':{bg:'#FFF8E1',fg:'#B7770D'},
+      '기타':  {bg:'#F0F0F0',fg:'#555'},
+    };
+    filtered.forEach(function(e){
+      const tc = e.expense_type ? (TC[e.expense_type]||{bg:'#F0F0F0',fg:'#555'}) : null;
+      const typeBadge = tc
+        ? '<span class="badge" style="background:'+tc.bg+';color:'+tc.fg+'">'+esc(e.expense_type)+'</span>'
+        : '<span style="color:#CCC">-</span>';
+      const amtDisplay = e.amount ? Number(e.amount).toLocaleString('ko-KR')+'원' : '';
+      const eid = e.id;
 
-  html+='</tbody></table>';
-  document.getElementById('expTableWrap').innerHTML=html;
+      html += '<tr id="exprow-'+eid+'">';
+      /* 번호 */
+      html += '<td><div class="c-box" style="justify-content:center;color:var(--muted);font-size:12px">'+(e.seq||'-')+'</div></td>';
+      /* 사용일자 */
+      html += '<td><div class="c-box" style="justify-content:center">'
+           +  '<input type="date" class="c-date" value="'+(e.used_date||'')+'"'
+           +  ' onchange="saveExpField(\''+eid+'\',\'used_date\',this.value||null)">'
+           +  '</div></td>';
+      /* 경비항목 드롭다운 */
+      html += '<td><div class="c-box" style="justify-content:center">'
+           +  '<span class="dd-btn" onclick="openExpTypeDD(event,\''+eid+'\')">'+typeBadge+'</span>'
+           +  '</div></td>';
+      /* 참석인원 */
+      html += '<td><div class="c-box" style="justify-content:center">'
+           +  '<div class="c-text" contenteditable="true" data-ph="명"'
+           +  ' onblur="saveExpField(\''+eid+'\',\'attendees\',this.innerText.replace(/[^0-9]/g,\'\')||null)"'
+           +  ' onkeydown="textCellKey(event,this)"'
+           +  ' style="text-align:center;min-width:28px">'+(e.attendees!=null?e.attendees:'')+'</div>'
+           +  '</div></td>';
+      /* 경비한도 읽기전용 */
+      html += '<td><div class="c-box" style="justify-content:flex-end;color:var(--muted);font-size:12px">'+fmtMoney(e.budget_limit)+'</div></td>';
+      /* 집행액 */
+      html += '<td><div class="c-box" style="justify-content:flex-end">'
+           +  '<div class="c-text" contenteditable="true" data-ph="금액"'
+           +  ' data-id="'+eid+'" data-raw="'+(e.amount||0)+'"'
+           +  ' onfocus="expAmtFocus(this)"'
+           +  ' onblur="expAmtBlur(this)"'
+           +  ' onkeydown="textCellKey(event,this)"'
+           +  ' style="color:var(--danger);font-weight:600;text-align:right;min-width:60px">'+amtDisplay+'</div>'
+           +  '</div></td>';
+      /* 잔액 읽기전용 */
+      html += '<td><div class="c-box" style="justify-content:flex-end;color:#2E7D32;font-weight:600">'+fmtMoney(e.balance)+'</div></td>';
+      /* 비고 — 삭제 버튼이 hover 시 오른쪽에 나타남 */
+      html += '<td class="exp-note-cell"><div class="c-box" style="padding-right:22px">'
+           +  '<div class="c-text" contenteditable="true" data-ph="사용목적"'
+           +  ' onblur="saveExpField(\''+eid+'\',\'note\',this.innerText.trim()||null)"'
+           +  ' onkeydown="textCellKey(event,this)">'+esc(e.note||'')+'</div>'
+           +  '</div>'
+           +  '<button class="exp-del-btn" onclick="deleteExp(\''+eid+'\')" title="삭제">✕</button>'
+           +  '</td>';
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  expWrap.innerHTML = html;
 }
 
-function startEditExp(id){
-  if(editingExpId===id) return;
-  if(editingExpId) saveExpRow(editingExpId, true);
-  editingExpId=id;
-  renderExpense();
-}
-
-let _expTimer=null;
-function autoSaveExp(id){
-  clearTimeout(_expTimer);
-  _expTimer=setTimeout(()=>saveExpRow(id,true),200);
-}
-
-async function saveExpRow(id, silent=false){
-  if(editingExpId!==id) return;
-  const gv=sid=>(document.getElementById(sid+id)||{}).value||null;
-  const amount=Number(gv('eem-'));
-  if(!amount){ if(!silent) toast('⚠️ 집행액을 입력하세요.'); return; }
+/* ============================================================
+   경비 — 빠른 행 추가 (표 상단 버튼)
+============================================================ */
+async function quickAddExp(){
   const TOTAL=1080000;
-  const prevSpent=expData.filter(e=>e.id!==id).reduce((s,e)=>s+(Number(e.amount)||0),0);
-  const newBal=TOTAL-prevSpent-amount;
-  const payload={
-    used_date:gv('eed-')||null, expense_type:gv('eet-'),
-    attendees:Number(gv('eea-'))||null,
-    amount, balance:newBal, note:gv('een-'),
-  };
+  const prevSpent=expData.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const maxSeq=expData.length?Math.max(...expData.map(e=>e.seq||0)):0;
+  const payload={ seq:maxSeq+1, budget_limit:TOTAL-prevSpent, balance:TOTAL-prevSpent, amount:0, year:activeYear };
+  setSyncStatus('loading','추가중...');
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/dept_expense',
+      {method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error(await res.text());
+    const [created]=await res.json();
+    expData.push(created);
+    renderExpense(); updateBudget();
+    setSyncStatus('ok','연결됨');
+    /* 새 행의 집행액 칸에 포커스 */
+    setTimeout(()=>{
+      const row=document.getElementById('exprow-'+created.id);
+      if(row){ const c=row.querySelectorAll('.c-text')[1]; if(c) c.focus(); }
+    },80);
+  }catch(e){ setSyncStatus('error','오류'); toast('❌ 추가 실패: '+e.message); }
+}
+
+/* 집행액 셀 포커스 — 숫자만 표시 */
+function expAmtFocus(el){
+  const raw = el.dataset.raw;
+  el.innerText = (raw && raw !== '0') ? raw : '';
+}
+
+/* 집행액 셀 블러 — 포맷팅 후 저장 */
+function expAmtBlur(el){
+  const n = el.innerText.replace(/\D/g, '');
+  el.dataset.raw = n;
+  el.innerText = n ? Number(n).toLocaleString('ko-KR')+'원' : '';
+  saveExpAmount(el.dataset.id, n);
+}
+
+/* ============================================================
+   경비 — 셀 하나 저장
+============================================================ */
+async function saveExpField(id, field, value){
+  const row=expData.find(x=>x.id===id);
+  if(!row) return;
+  const newVal=(value===''?null:value);
+  if(String(row[field])===String(newVal)) return;
   setSyncStatus('loading','저장중...');
   try{
     const res=await fetch(SB_URL+'/rest/v1/dept_expense?id=eq.'+id,
-      {method:'PATCH',headers:H,body:JSON.stringify(payload)});
+      {method:'PATCH',headers:H,body:JSON.stringify({[field]:newVal})});
     if(!res.ok) throw new Error(await res.text());
-    const idx=expData.findIndex(x=>x.id===id);
-    if(idx>=0) expData[idx]={...expData[idx],...payload};
-    editingExpId=null;
+    row[field]=newVal;
     renderExpense(); updateBudget();
     setSyncStatus('ok','연결됨');
-    if(!silent) toast('✅ 저장되었습니다.');
-  } catch(e){ setSyncStatus('error','오류'); if(!silent) toast('❌ 저장 실패: '+e.message); }
+  }catch(e){ setSyncStatus('error','오류'); toast('❌ 저장 실패: '+e.message); }
 }
 
+/* 집행액 변경 시 잔액 자동 재계산
+   rawVal: 숫자 문자열 (쉼표/원 제거된 상태로 넘어옴) */
+async function saveExpAmount(id, rawVal){
+  /* 쉼표·원·공백 제거 후 숫자 변환 */
+  const amount = Number((rawVal||'').replace(/[^0-9]/g,'')) || 0;
+  const row = expData.find(x=>x.id===id);
+  if(!row) return;
+  if(row.amount === amount) return;
+  const TOTAL = 1080000;
+  /* 이 행 제외한 나머지 집행 합계 */
+  const prevSpent = expData.filter(x=>x.id!==id).reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const balance = TOTAL - prevSpent - amount;
+  setSyncStatus('loading','저장중...');
+  try{
+    const res = await fetch(SB_URL+'/rest/v1/dept_expense?id=eq.'+id,
+      {method:'PATCH', headers:H, body:JSON.stringify({amount, balance})});
+    if(!res.ok) throw new Error(await res.text());
+    row.amount = amount;
+    row.balance = balance;
+    renderExpense();
+    updateBudget();
+    setSyncStatus('ok','연결됨');
+  }catch(e){ setSyncStatus('error','오류'); toast('❌ 저장 실패: '+e.message); }
+}
+
+/* ============================================================
+   경비 — 경비항목 드롭다운 (dd-popup 재활용)
+============================================================ */
+function openExpTypeDD(e, id){
+  e.stopPropagation();
+  const popup=document.getElementById('ddPopup');
+  ddCtx={id, field:'__expType'};
+  const row=expData.find(x=>x.id===id);
+  const cur=row?row.expense_type:null;
+  const typeColor={
+    '식사':  {bg:'#F3EEFC',fg:'#7C5CBF'},
+    '커피':  {bg:'#E8F5E9',fg:'#2E7D32'},
+    '교통':  {bg:'#E3F2FD',fg:'#1565C0'},
+    '물품구입':{bg:'#FFF8E1',fg:'#B7770D'},
+    '기타':  {bg:'#F0F0F0',fg:'#555'},
+  };
+  let h='<div class="dd-item'+(cur?'':' selected')+'" onclick="pickExpType(\''+id+'\',null)">'
+      +'<span style="color:#BBB;font-size:12px">— 비우기 —</span></div>';
+  EXP_TYPES.forEach(t=>{
+    const c=typeColor[t]||{bg:'#F0F0F0',fg:'#555'};
+    h+='<div class="dd-item'+(cur===t?' selected':'')+'" onclick="pickExpType(\''+id+'\',\''+t+'\')">'
+      +'<span class="badge" style="background:'+c.bg+';color:'+c.fg+'">'+t+'</span></div>';
+  });
+  popup.innerHTML=h;
+  const r=e.currentTarget.getBoundingClientRect();
+  popup.classList.add('open');
+  const ph=popup.offsetHeight||200;
+  const top=(r.bottom+ph+8>window.innerHeight)?(r.top-ph-4):(r.bottom+4);
+  popup.style.top=Math.max(4,top)+'px';
+  popup.style.left=Math.min(r.left,window.innerWidth-popup.offsetWidth-8)+'px';
+}
+
+function pickExpType(id, value){
+  closeDD();
+  saveExpField(id,'expense_type',value);
+}
+
+/* ============================================================
+   경비 삭제
+============================================================ */
 async function deleteExp(id){
   if(!confirm('정말 삭제하시겠습니까?')) return;
   try{
     const res=await fetch(SB_URL+'/rest/v1/dept_expense?id=eq.'+id,{method:'DELETE',headers:H});
     if(!res.ok) throw new Error();
     expData=expData.filter(x=>x.id!==id);
-    if(editingExpId===id) editingExpId=null;
     renderExpense(); updateBudget();
     toast('🗑️ 삭제되었습니다.');
-  } catch(e){ toast('❌ 삭제 실패'); }
-}
-
-function openAddExpenseModal(){
-  const body=
-    '<div class="field-row">'
-    +'<div class="field"><label>사용일자</label><input type="date" id="ef-date"></div>'
-    +'<div class="field"><label>경비항목</label><select id="ef-type">'
-    +mkOpts(['식사','커피','교통','물품구입','기타'],'식사')
-    +'</select></div></div>'
-    +'<div class="field-row">'
-    +'<div class="field"><label>참석인원</label><input type="number" id="ef-att" placeholder="명" min="1"></div>'
-    +'<div class="field"><label>금차 집행액 (원)</label><input type="number" id="ef-amount" placeholder="금액"></div></div>'
-    +'<div class="field"><label>비고 (사용목적)</label><input id="ef-note" placeholder="예: 팀 회식"></div>';
-
-  openModal('경비 추가', body,
-    '<button class="btn" onclick="closeModal()">취소</button>'
-    +'<button class="btn primary" onclick="addExpense()">추가</button>');
-  setTimeout(()=>{ const e=document.getElementById('ef-amount'); if(e) e.focus(); },100);
-}
-
-async function addExpense(){
-  const g=id=>(document.getElementById(id)||{}).value||null;
-  const amount=Number(g('ef-amount'));
-  if(!amount){ toast('⚠️ 집행액을 입력하세요.'); return; }
-  const TOTAL=1080000;
-  const prevSpent=expData.reduce((s,e)=>s+(Number(e.amount)||0),0);
-  const maxSeq=expData.length?Math.max(...expData.map(e=>e.seq||0)):0;
-  const payload={
-    seq:maxSeq+1, used_date:g('ef-date')||null, expense_type:g('ef-type'),
-    attendees:Number(g('ef-att'))||null,
-    budget_limit:TOTAL-prevSpent, amount, balance:TOTAL-prevSpent-amount,
-    note:g('ef-note'),
-  };
-  setSyncStatus('loading','저장중...');
-  try{
-    const res=await fetch(SB_URL+'/rest/v1/dept_expense',{method:'POST',headers:H,body:JSON.stringify(payload)});
-    if(!res.ok) throw new Error(await res.text());
-    const added=await res.json();
-    expData.push(added[0]);
-    closeModal(); renderExpense(); updateBudget();
-    setSyncStatus('ok','연결됨');
-    toast('✅ 경비가 추가되었습니다.');
-  } catch(e){ setSyncStatus('error','오류'); toast('❌ 추가 실패: '+e.message); }
+  }catch(e){ toast('❌ 삭제 실패'); }
 }
 
 /* ============================================================
@@ -1699,93 +2028,6 @@ function openModal(title, bodyHtml, footerHtml=''){
   });
 }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
-
-/* ============================================================
-   초기 데이터 업로드 - 처음 한 번만!
-   Supabase에 엑셀 데이터를 넣습니다
-============================================================ */
-async function importInitialData(){
-  if(!confirm('엑셀 초기 데이터를 Supabase에 업로드합니다.\n⚠️ 처음 한 번만 실행하세요!\n계속하시겠습니까?')) return;
-  toast('⏳ 업로드 중...', 15000);
-
-  const base={
-    status:null,lead:null,sub:null,title:null,location:null,
-    start_date:null,end_date:null,save_time:null,work_time:null,
-    sales:null,request_date:null,deadline:null,dday:null,lead_time:null,
-    category:null,nature:null,modeling:null,drawing:null,manual:null,
-    intensity:null,design_path:null,drawing_path:null,memo:null,guide:null
-  };
-  const rows=[
-    {status:'1. 요청',title:'그네 디자인 변경 프레임 125A 이용, 기울어진 각도 그대로 아치삭제 기초는 딥마운팅x >> 서페이스 마운팅',sales:'대표님',category:'신제품개발',nature:'놀이시설개발',intensity:'중'},
-    {status:'1. 요청',title:'더블돔 체크리스트 E 네트, K네트 연결부 사다리 분할작업 필요',sales:'백운기',intensity:'하'},
-    {status:'2 진행중',lead:'주종현',title:'KR_242801_ 김제 앙글방글 아이러브 아지트 조성사업 벌룬',location:'김제',start_date:'2025-08-15',sales:'박근형',request_date:'2025-08-01',deadline:'2025-09-19',dday:-209,lead_time:35,category:'국내영업',nature:'놀이시설 DB',modeling:'진행중',intensity:'최상'},
-    {status:'2 진행중',lead:'주종현',sub:'정재철',title:'밀양 알프스 슬라이드 출구 문제 AS건',location:'밀양',start_date:'2025-09-22',sales:'박근형',request_date:'2025-09-21',deadline:'2025-09-21',dday:-229,lead_time:1,category:'국내',nature:'국내',modeling:'완료',drawing:'완료',manual:'완료',intensity:'하'},
-    {status:'2 진행중',lead:'정재철',title:'마운틴카트 전기계통 수리 및 발주대비 개선작업 진행',location:'동해',start_date:'2025-08-16',sales:'회장님',request_date:'2025-08-23',deadline:'2025-08-31',dday:-221,lead_time:7,category:'어드벤처',nature:'어드벤처개발',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'중'},
-    {status:'2 진행중',lead:'정재철',sub:'주종현',title:'ETX 구동부 샘플 개발 (모델링, 시제품제작, 테스트 등)',location:'해운대',start_date:'2025-07-25',sales:'회장님',request_date:'2025-09-20',deadline:'2025-10-19',dday:-209,lead_time:22,category:'어드벤처',nature:'어드벤처개발',modeling:'진행중',intensity:'최상'},
-    {status:'4. 보류',lead:'정재철',title:'전동레일바이크 개발',location:'김해',start_date:'2026-04-15',sales:'회장님',request_date:'2026-04-12',deadline:'2026-06-17',dday:-166,lead_time:49,category:'어드벤처',nature:'어드벤처개발',modeling:'진행중',drawing:'진행중',manual:'미적용',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',title:'레일 바이크',sales:'회장님',start_date:'2026-01-23',end_date:'2026-02-27',lead_time:25,category:'어드벤쳐',nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'완료',intensity:'상'},
-    {status:'2 진행중',lead:'주종현',title:'고령 GS-AH102 계단 제안',start_date:'2026-01-29',sales:'박근형',request_date:'2026-01-29',category:'기성품',nature:'국내',modeling:'진행중',drawing:'진행중',manual:'진행중',intensity:'중'},
-    {status:'4. 보류',lead:'정재철',sub:'주종현',title:'한전 접이식 스페이서 카트 개발건',location:'한전',start_date:'2026-02-16',sales:'회장님',request_date:'2026-02-16',deadline:'2026-02-25',dday:-133,lead_time:8,category:'개발',nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'미적용',intensity:'중'},
-    {status:'2 진행중',lead:'김태훈',title:'GS-RG103 모델링, 제작도, 매뉴얼, 체크리스트',start_date:'2026-04-01',end_date:'2026-04-19',lead_time:14,sales:'대표님',nature:'놀이시설 DB',modeling:'진행중',drawing:'진행중',manual:'진행중',intensity:'중'},
-    {status:'3. 지속적진행',lead:'정재철',title:'ERP 부속품 등록 및 BOM 시스템 샘플 테스트',location:'ERP',start_date:'2025-05-09',sales:'대표님',request_date:'2025-05-07',deadline:'2025-05-18',dday:-306,lead_time:10,category:'DB',nature:'놀이시설 DB',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'하'},
-    {status:'3. 지속적진행',lead:'이미녕',sub:'주종현, 정재철',title:'세발 수상바이크 개발',start_date:'2024-11-25',sales:'회장님',category:'어드벤처',nature:'어드벤처개발',modeling:'진행중',drawing:'진행중',manual:'미적용',intensity:'상',memo:'프로펠러 장착/ 달 모양 상부 데코레이션/ LED 조명 25.02월부터 싱가폴프로젝트로 인해 중단됨'},
-    {status:'3. 지속적진행',lead:'김태훈',title:'스탠다드 매뉴얼 제작 및 사내 부속품 DB 표준화',location:'없음',start_date:'2024-07-02',sales:'대표님',category:'기성품',nature:'놀이시설 DB',modeling:'진행중',drawing:'진행중',manual:'진행중',intensity:'하',memo:'설계 기본 매뉴얼 제작',guide:'신규직원 입사시 필요한 기본 설계 매뉴얼 제작'},
-    {status:'4. 보류',lead:'정재철',sub:'이미녕, 주종현',title:'ERP 사용을 위한 부속품 부품코드 생성 체계 정리',location:'ERP',start_date:'2025-05-09',sales:'대표님',category:'기성품',nature:'놀이시설 DB',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'중'},
-    {status:'3. 지속적진행',lead:'김태훈',sub:'정재철, 주종현',title:'스페이스 크레프트 정리',start_date:'2024-03-02',sales:'대표님',category:'기성품',nature:'놀이시설 DB',modeling:'진행중',intensity:'하',memo:'기성품 부속 모델링 데이터화'},
-    {status:'3. 지속적진행',lead:'이미녕',title:'부속발주도면 최신 도곽에 맞춰 CAD파일 수정, 발주도면 리스트 정리',location:'자재팀',start_date:'2024-12-12',sales:'표형선',category:'기성품',nature:'놀이시설 DB',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'중'},
-    {status:'3. 지속적진행',lead:'김태훈',title:'ERP 기성품 BOM 등록',sales:'대표님',nature:'놀이시설 DB',modeling:'미적용',drawing:'미적용',manual:'미적용'},
-    {status:'4. 보류',lead:'김태훈',sub:'주종현',title:'Φ35 로프 체결 부속품 개발',start_date:'2025-09-16',sales:'회장님',request_date:'2025-09-16',deadline:'2025-10-08',dday:-216,lead_time:17,category:'교량 개발품',nature:'지원업무',modeling:'진행중',drawing:'진행중',intensity:'중'},
-    {status:'4. 보류',lead:'김태훈',sub:'정재철',title:'회장님실 벽면 HPL 글귀 가공',start_date:'2024-01-06',end_date:'2024-03-07',sales:'회장님',request_date:'2024-01-06',deadline:'2024-03-07',category:'HPL',nature:'지원업무',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'하',memo:'HPL 글귀 가공 작업진행'},
-    {status:'4. 보류',lead:'김태훈',title:'플라움캠핑장 분리수거 및 주의사항 HPL가공',start_date:'2024-12-27',sales:'회장님',request_date:'2024-12-27',deadline:'2025-01-01',category:'HPL',nature:'지원업무',modeling:'미적용',drawing:'미적용',manual:'미적용',intensity:'하'},
-    {status:'4. 보류',lead:'김태훈',sub:'정재철',title:'영도 전망대 3D 프린터',location:'영도',start_date:'2024-07-06',end_date:'2024-07-24',sales:'회장님',category:'3D프린터',nature:'지원업무',modeling:'완료',drawing:'보류',manual:'보류',intensity:'하',memo:'전망대 3D 프린터 출력 디자인5종'},
-    {status:'5. 완료',lead:'주종현',sub:'정재철, 이미녕, 김태훈',title:'TUV 20종 매뉴얼, 구조계산서 진행',location:'TUV',start_date:'2025-10-29',end_date:'2025-11-26',sales:'이은애',request_date:'2025-10-11',deadline:'2025-11-26',lead_time:35,category:'기성품',nature:'놀이시설 DB',modeling:'완료',manual:'진행중',intensity:'최상'},
-    {status:'5. 완료',lead:'김태훈',title:'GS-RG102 모델링, 제작도, 매뉴얼, 체크리스트',start_date:'2026-02-25',end_date:'2026-03-19',lead_time:16,sales:'대표님',nature:'놀이시설 DB',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'5. 완료',lead:'정재철',sub:'주종현, 김태훈',title:'맥시코 GS-R301 도면 및 제작도, 체크리스트 제공',location:'멕시코',start_date:'2026-04-04',end_date:'2026-04-05',sales:'이윤슬',request_date:'2026-04-01',deadline:'2026-04-05',lead_time:5,category:'기성품',nature:'놀이시설 DB',drawing:'미적용',manual:'완료',intensity:'하'},
-    {status:'5. 완료',lead:'정재철',title:'기성품 GS-W805S (L), GS-W805S (I) 레이아웃도면, 매뉴얼, 체크리스트 정리',start_date:'2026-04-26',end_date:'2026-05-02',sales:'김정화',request_date:'2026-04-26',deadline:'2026-05-03',lead_time:6,category:'기성품',nature:'놀이시설 DB',modeling:'완료',manual:'완료',intensity:'하'},
-    {status:'5. 완료',lead:'주종현',title:'제주도 원형 바이크 조립 휠 마모로 인한 바퀴교체 가공도면 수정',location:'제주도',start_date:'2026-05-02',end_date:'2026-05-02',sales:'백운기',request_date:'2026-05-01',deadline:'2026-05-03',lead_time:3,category:'어드벤쳐',nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'2 진행중',lead:'김태훈',sub:'주종현, 정재철',title:'주26067_TH_The Skywalk is for St Paul int School Bkk',location:'태국',start_date:'2026-04-21',end_date:'2026-05-21',sales:'이윤슬',deadline:'2026-05-21',lead_time:32,nature:'해외',modeling:'진행중',drawing:'진행중',manual:'진행중',intensity:'하'},
-    {status:'5. 완료',lead:'정재철',title:'신제품 개발 GS-Ws05(가칭)',start_date:'2026-05-02',end_date:'2026-05-02',sales:'대표님',request_date:'2026-05-02',deadline:'2026-05-02',category:'기성품',nature:'놀이시설개발',modeling:'완료',drawing:'진행중',manual:'진행중',intensity:'하'},
-    {status:'5. 완료',lead:'정재철',title:'GS-SP1201 제작도 작성 핀란드 출고건',location:'핀란드',start_date:'2026-06-04',end_date:'2026-06-13',sales:'이은애',request_date:'2026-06-01',deadline:'2026-06-15',lead_time:11,nature:'놀이시설 DB',modeling:'완료',drawing:'완료',manual:'완료',intensity:'하'},
-    {status:'4. 보류',lead:'정재철',title:'마그네틱 브레이크 중력레일 개발건',start_date:'2026-06-14',sales:'회장님',request_date:'2026-06-04',deadline:'2026-07-20',dday:-36,lead_time:35,category:'어드벤처',nature:'어드벤처개발',modeling:'진행중',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',sub:'정재철',title:'김제 앙글 방글 아웃테리어 제작 방식 변경에 대한 물량 산출 이미지 작성',location:'김제',start_date:'2026-02-19',end_date:'2026-02-21',sales:'박근형',nature:'지원업무',modeling:'완료',drawing:'완료',manual:'미적용',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',title:'고령 좌학리 엔트 타워 추가 계단 제작도 및 모델링',location:'고령',start_date:'2026-02-11',end_date:'2026-02-28',sales:'김기범',request_date:'2026-02-03',deadline:'2026-03-01',lead_time:21,nature:'지원업무',modeling:'완료',drawing:'완료',manual:'완료',intensity:'상'},
-    {status:'5. 완료',lead:'주종현',sub:'정재철',title:'한전 트롤리카 제작도 및 모델링 수정',location:'한전',start_date:'2026-03-02',end_date:'2026-03-12',sales:'회장님',request_date:'2026-02-10',nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'미적용',intensity:'상'},
-    {status:'5. 완료',lead:'주종현',title:'GS-R301 트롤리 도면 및 모델링 수정',location:'멕시코',start_date:'2026-04-17',end_date:'2026-04-17',sales:'표형선',request_date:'2026-04-17',deadline:'2026-04-17',nature:'놀이시설 DB',drawing:'완료',intensity:'하'},
-    {status:'5. 완료',lead:'주종현',title:'구례 섬진강 바이크 BOM 리스트 작업',location:'구례',start_date:'2026-04-16',end_date:'2026-04-17',sales:'김정화',request_date:'2026-04-12',deadline:'2026-04-19',lead_time:6,nature:'지원업무',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',title:'금호 중력 레일 트롤리 조립형 제작도 수정',location:'금호',start_date:'2026-04-15',end_date:'2026-04-19',sales:'백운기',nature:'놀이시설개발',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',title:'제주도 바이크 반대 방향 주행용 제작도',location:'제주도',start_date:'2026-04-23',end_date:'2026-04-25',sales:'백운기',request_date:'2026-04-08',deadline:'2026-04-19',lead_time:10,nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'완료',intensity:'상'},
-    {status:'2 진행중',lead:'주종현',sub:'김태훈',title:'TH_260905_Skywalk for Nist',location:'태국',start_date:'2026-05-02',end_date:'2026-05-10',sales:'이윤슬',request_date:'2026-04-08',deadline:'2026-05-21',lead_time:32,category:'해외영업',nature:'해외',modeling:'진행중',drawing:'진행중',manual:'진행중',intensity:'중'},
-    {status:'5. 완료',lead:'주종현',title:'제주도 바이크 반대 방향 주행용 물량 산출 엑셀 파일 작성',location:'제주도',start_date:'2026-04-30',end_date:'2026-05-01',sales:'김정화',category:'어드벤쳐',nature:'어드벤처개발',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'5. 완료',lead:'김태훈',title:'CN_254001_Concordia International School Shanghai 누락 HPL 작업',start_date:'2026-04-30',end_date:'2026-04-30',sales:'표형선',request_date:'2026-04-30',deadline:'2026-04-30',drawing:'완료',intensity:'최하',memo:'홈파기 누락 부분 추가 작업'},
-    {status:'5. 완료',lead:'주종현',title:'주24403 KR_242403 아산 GS-SV102 AS 입구 추가 건',location:'아산',start_date:'2026-04-26',end_date:'2026-04-30',sales:'김기범',request_date:'2026-04-24',deadline:'2026-05-03',lead_time:8,nature:'지원업무',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'5. 완료',lead:'정재철',title:'뉴질랜드 GS-TP203 커스텀',location:'뉴질랜드',start_date:'2026-06-29',end_date:'2026-07-17',sales:'이윤슬',request_date:'2026-06-29',deadline:'2026-07-17',lead_time:15,category:'기성품',nature:'해외',modeling:'완료',drawing:'완료',manual:'완료',intensity:'중'},
-    {status:'2 진행중',lead:'정재철',title:'싱가폴 GS-TP203 커스텀',location:'싱가폴',start_date:'2026-07-20',sales:'이윤슬',request_date:'2026-07-17',deadline:'2026-09-12',dday:11,lead_time:41,category:'기성품',nature:'해외',modeling:'완료',drawing:'진행중',intensity:'중'},
-  ];
-  const tasks=rows.map(r=>({...base,...r}));
-
-  const TOTAL=1080000;
-  let running=TOTAL;
-  const expRows=[
-    {seq:1,used_date:'2026-01-14',expense_type:'식사',attendees:3,amount:106000,note:'회식'},
-    {seq:2,used_date:'2026-03-11',expense_type:'식사',attendees:null,amount:128900,note:'회식'},
-    {seq:3,used_date:'2026-05-14',expense_type:'식사',attendees:null,amount:164000,note:'회식'},
-    {seq:4,used_date:'2026-05-15',expense_type:'식사',attendees:null,amount:30000,note:'식사'},
-    {seq:5,used_date:'2026-05-29',expense_type:'식사',attendees:null,amount:30500,note:'식사'},
-    {seq:6,used_date:'2026-05-29',expense_type:'커피',attendees:null,amount:6000,note:'커피'},
-  ].map(e=>{const bl=running;running-=e.amount;return{...e,budget_limit:bl,balance:running};});
-
-  try{
-    const r1=await fetch(SB_URL+'/rest/v1/task_schedule',
-      {method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(tasks)});
-    if(!r1.ok) throw new Error('업무 업로드 실패: '+(await r1.text()));
-    const r2=await fetch(SB_URL+'/rest/v1/dept_expense',
-      {method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(expRows)});
-    if(!r2.ok) throw new Error('경비 업로드 실패: '+(await r2.text()));
-    await refreshAll();
-    toast('✅ 초기 데이터 업로드 완료!', 3000);
-  } catch(e){ console.error(e); toast('❌ '+e.message, 5000); }
-}
-
 /* ============================================================
    앱 시작
 ============================================================ */
