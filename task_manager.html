@@ -529,34 +529,6 @@ tbody tr.editing-row { background:#FFFDE7 !important; }
    ★ th에 overflow:hidden 주면 핸들이 잘리므로 절대 금지! */
 #taskTableWrap th{ position:relative; user-select:none; }
 /* 컬럼 경계선을 잡아 끄는 손잡이 */
-.col-resizer{
-  position:absolute; right:-4px; top:0; bottom:0;
-  width:8px;            /* ← 손잡이 클릭 영역 넓이 */
-  cursor:col-resize; z-index:20;
-  display:flex; align-items:center; justify-content:center;
-}
-.col-resizer::after{                 /* 손잡이 막대 모양 */
-  content:''; display:block;
-  width:2px; height:55%;
-  background:#D0D8E4; border-radius:2px; transition:all .1s;
-}
-.col-resizer:hover::after,
-.col-resizer.dragging::after{ background:var(--blueprint); height:75%; width:3px; }
-
-/* ---- 컬럼 폭 툴팁 ----
-   리사이즈 드래그 중에 마우스 옆에 현재 px 값을 보여줍니다.
-   position:fixed + JS로 마우스 위치를 실시간 업데이트합니다. */
-.col-resize-tooltip{
-  position:fixed; pointer-events:none;
-  background:#1A2332; color:#fff;
-  font-size:12px; font-weight:600; font-family:var(--sans);
-  padding:4px 9px; border-radius:6px;
-  white-space:nowrap; z-index:9999;
-  opacity:0; transition:opacity .1s;
-  transform:translate(12px, -50%);  /* 마우스 오른쪽, 수직 중앙 */
-}
-.col-resize-tooltip.show{ opacity:1; }
-
 /* ---- 셀 공통 박스 ----
    뷰/편집 상관없이 높이가 같아야 행이 안 흔들립니다. */
 .c-box{
@@ -943,7 +915,7 @@ const COL_DEFS_DEFAULT = [
         프로젝트명만 0으로 설정 → 다른 컬럼 폭 합산 후 남는 공간 전부 배정 */
   ['상태',                'status',         90, 'status',    false],
   ['주담당자',            'lead',           90, 'lead',      false],
-  ['보조담당자',          'sub',           190, 'sub',       false],
+  ['보조담당자',          'sub',            90, 'sub',       false],
   ['프로젝트명 / 업무내용','title',           0, null,        false],
   ['출고지',              'location',       80, null,        false],
   ['시작일',              'start_date',    110, null,        false],
@@ -977,7 +949,6 @@ const COL_SIGNATURE_KEY  = 'taskMgr_colSignature';
     const saved = localStorage.getItem(COL_SIGNATURE_KEY);
     if(saved !== COL_DEFS_SIGNATURE){
       localStorage.removeItem(COL_ORDER_KEY);
-      localStorage.removeItem('taskMgr_colWidths');
       localStorage.setItem(COL_SIGNATURE_KEY, COL_DEFS_SIGNATURE);
     }
   }catch(e){}
@@ -1658,15 +1629,18 @@ function tdSubCell(id, value){
   const inner = names.length
     ? names.map(n=>{
         const c = optColor('sub', n);
-        return '<span class="badge" style="background:'+c.bg+';color:'+c.fg+'">'+esc(n)+'</span>';
+        return '<span class="badge" style="font-size:11px;background:'+c.bg+';color:'+c.fg+'">'+esc(n)+'</span>';
       }).join('')
     : '<span style="color:#CCC">-</span>';
 
-  return '<td><div class="c-box" style="justify-content:center;overflow:hidden">'
-    +'<span class="dd-btn sub-dd-btn" style="flex-wrap:nowrap;gap:3px;white-space:nowrap"'
-    +' onclick="openDD(event,\''+id+'\',\'sub\')">'
+  /* ▾ 화살표를 td 오른쪽 끝 + 수직 중앙에 absolute로 고정
+     뱃지가 1줄이든 3줄이든 항상 셀 높이 기준 중앙에 위치함 */
+  return '<td style="position:relative;padding-right:16px">'
+    +'<div class="c-box" style="justify-content:center;align-items:flex-start;flex-wrap:wrap;gap:3px;padding:5px 8px;min-height:38px;cursor:pointer" onclick="openDD(event,\''+id+'\',\'sub\')">'
     +inner
-    +'</span></div></td>';
+    +'</div>'
+    +'<span style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--muted);pointer-events:none">▾</span>'
+    +'</td>';
 }
 
 /* ---- 토글 버튼 그룹 ----
@@ -2622,30 +2596,6 @@ async function optDrop(e, i){
 ============================================================ */
 
 /* 로컬스토리지 키 — 이 이름으로 컬럼 폭이 저장됩니다 */
-const COL_STORAGE_KEY = 'taskMgr_colWidths';
-
-/* 현재 컬럼 폭(%)을 로컬스토리지에 저장 */
-function saveColWidths(cols){
-  const widths = cols.map(c => c.style.width);  /* ["90px", "190px", ...] or ["12.34%",...] */
-  try{ localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(widths)); }
-  catch(e){ /* 저장 실패해도 기능은 계속 작동 */ }
-}
-
-/* 로컬스토리지에서 컬럼 폭을 불러와 col 요소에 적용 */
-function loadColWidths(cols){
-  try{
-    const saved = localStorage.getItem(COL_STORAGE_KEY);
-    if(!saved) return false;
-    const widths = JSON.parse(saved);
-    /* 저장된 컬럼 수와 현재 컬럼 수가 같을 때만 복원 (컬럼 구조 바뀌면 무시) */
-    if(widths.length !== cols.length) return false;
-    widths.forEach((w, i) => { cols[i].style.width = w; });
-    return true;
-  }catch(e){ return false; }
-}
-
-/* 컬럼 폭 리사이즈 드래그 중 여부 — 드래그 후 click(정렬) 실수 실행 방지 */
-let _colResizeDragging = false;
 /* 컬럼 순서 드래그앤드롭 중 여부 — 드래그 후 click(정렬) 실수 실행 방지 */
 let _colDragDragging = false;
 
@@ -2674,21 +2624,15 @@ function initColResize(){
   /* requestAnimationFrame 2중 중첩 — 브라우저가 레이아웃을 완전히 계산한 뒤 실행 */
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
-      /* ★ px 고정 방식으로 컬럼 폭 설정
-         COL_DEFS[i][2] 값을 px로 직접 사용.
-         프로젝트명(값=0)은 나머지 전부 채움.
-         — localStorage에 저장된 사용자 리사이즈 값이 있으면 그걸 우선 사용 */
-      const restored = loadColWidths(cols);
-      if(!restored){
-        const tableW = tbl.getBoundingClientRect().width || window.innerWidth;
-        const fixedTotal = COL_DEFS.reduce((s,c)=>s+(c[2]||0), 0);
-        /* 남는 공간 = 테이블 폭 - 고정 컬럼 합계. 최소 120px 보장 */
-        const flexPx = Math.max(120, tableW - fixedTotal);
-        cols.forEach((col, i)=>{
-          const defPx = COL_DEFS[i] ? COL_DEFS[i][2] : 0;
-          col.style.width = (defPx === 0 ? flexPx : defPx) + 'px';
-        });
-      }
+      /* ★ 항상 COL_DEFS의 px 고정값으로 컬럼 폭 설정
+         프로젝트명(값=0)은 다른 컬럼 합산 후 남는 공간 전부 채움 */
+      const tableW = tbl.getBoundingClientRect().width || window.innerWidth;
+      const fixedTotal = COL_DEFS.reduce((s,c)=>s+(c[2]||0), 0);
+      const flexPx = Math.max(120, tableW - fixedTotal);
+      cols.forEach((col, i)=>{
+        const defPx = COL_DEFS[i] ? COL_DEFS[i][2] : 0;
+        col.style.width = (defPx === 0 ? flexPx : defPx) + 'px';
+      });
 
       /* ---- 정렬 클릭 이벤트 부착 ----
          th에 onclick="" 직접 넣으면 리사이즈 핸들 드래그 후 mouseup 시점에
@@ -2698,11 +2642,8 @@ function initColResize(){
         const key = th.dataset.sortKey;  /* data-sort-key 속성값 */
         if(!key) return;
         th.addEventListener('click', e=>{
-          /* 리사이즈 핸들 클릭이면 무시 */
-          if(e.target.classList.contains('col-resizer')) return;
-          if(e.target.closest('.col-resizer')) return;
           /* 컬럼 드래그 직후에 발생하는 click이면 무시 */
-          if(_colResizeDragging || _colDragDragging) return;
+          if(_colDragDragging) return;
           sortBy(key);
         });
       });
@@ -2726,14 +2667,9 @@ function initColResize(){
 
         /* 드래그 시작 */
         th.addEventListener('dragstart', e=>{
-          /* 리사이즈 핸들 위에서 시작한 드래그는 무시 */
-          if(e.target.classList.contains('col-resizer') || e.target.closest('.col-resizer')){
-            e.preventDefault(); return;
-          }
           colDragFrom = i;
           _colDragDragging = false;
           e.dataTransfer.effectAllowed = 'move';
-          /* 약간의 딜레이 후 투명 처리 (드래그 고스트 이미지가 만들어진 뒤) */
           setTimeout(()=>th.classList.add('col-dragging'), 0);
         });
 
@@ -2769,8 +2705,6 @@ function initColResize(){
           colDragFrom = null;
           /* 순서 저장 후 표 다시 그리기 */
           saveColOrder();
-          /* 컬럼 폭 초기화 (순서가 바뀌면 저장된 % 폭이 맞지 않으므로) */
-          localStorage.removeItem(COL_STORAGE_KEY);
           renderTask();
         });
 
@@ -2781,71 +2715,6 @@ function initColResize(){
           colDragFrom = null;
           /* dragend 직후 click 이벤트(정렬) 차단 */
           setTimeout(()=>{ _colDragDragging = false; }, 100);
-        });
-      });
-
-      /* ---- 리사이즈 핸들 부착 ---- */
-      ths.forEach((th, i)=>{
-        if(th.querySelector('.col-resizer')) return;   /* 이미 붙어있으면 건너뜀 */
-        if(i === ths.length - 1) return;              /* ★ 맨 오른쪽 끝은 고정 */
-
-        const handle = document.createElement('div');
-        handle.className = 'col-resizer';
-        th.appendChild(handle);
-
-        handle.addEventListener('mousedown', e=>{
-          e.preventDefault();
-          e.stopPropagation();          /* mousedown 버블링 차단 */
-          _colResizeDragging = false;   /* 아직 실제 이동 전 */
-
-          const x0    = e.clientX;
-          const total = tbl.getBoundingClientRect().width;
-          const w0    = ths[i].getBoundingClientRect().width;      /* 왼쪽 칸 */
-          const w1    = ths[i+1].getBoundingClientRect().width;    /* 오른쪽 칸 */
-          handle.classList.add('dragging');
-          document.body.style.cursor = 'col-resize';
-          document.body.style.userSelect = 'none';
-
-          const onMove = e2=>{
-            _colResizeDragging = true;
-            const d  = e2.clientX - x0;
-            const nw = w0 + d;          /* 왼쪽 칸 새 너비(px) */
-            const nn = w1 - d;          /* 오른쪽 칸 새 너비(px) */
-            if(nw >= 40 && nn >= 40){   /* 최소 40px 보장 */
-              /* ★ px 고정 방식 — % 대신 px로 직접 지정해야 화면 리사이즈에도 불변 */
-              cols[i].style.width   = Math.round(nw) + 'px';
-              cols[i+1].style.width = Math.round(nn) + 'px';
-            }
-            /* ---- 툴팁: 왼쪽 칸 현재 폭(px)을 마우스 옆에 표시 ---- */
-            const tooltip = document.getElementById('colResizeTooltip');
-            const curW = Math.max(40, Math.round(nw));  /* 최소 40 반영 */
-            tooltip.textContent = curW + ' px';
-            /* 마우스 위치 기준으로 툴팁 이동 */
-            tooltip.style.left = e2.clientX + 'px';
-            tooltip.style.top  = e2.clientY + 'px';
-            tooltip.classList.add('show');
-          };
-
-          const onUp = ()=>{
-            handle.classList.remove('dragging');
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-
-            /* 툴팁 숨기기 */
-            document.getElementById('colResizeTooltip').classList.remove('show');
-
-            /* 폭이 바뀌었으면 로컬스토리지에 저장 */
-            if(_colResizeDragging) saveColWidths(cols);
-
-            /* mouseup 직후 발생하는 click 이벤트(정렬)를 막기 위해
-               짧은 시간 동안 드래그 플래그를 유지합니다 */
-            setTimeout(()=>{ _colResizeDragging = false; }, 100);
-          };
-
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('mouseup', onUp);
         });
       });
     });
@@ -2883,7 +2752,7 @@ function initColResize(){
 </div>
 
 <!-- 컬럼 폭 리사이즈 툴팁 — 드래그 중 마우스 옆에 px 값 표시 -->
-<div class="col-resize-tooltip" id="colResizeTooltip"></div>
+
 
 </body>
 </html>
