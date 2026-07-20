@@ -1934,6 +1934,16 @@ function switchTab(tab){
     wlSwitchTab(tab);
   } else {
     document.getElementById('panel-'+tab).classList.add('active');
+    /* ★ 업무일정표 탭은 기본적으로 숨겨진 채(display:none) 페이지가 로딩되므로
+       처음 init() 시점에는 컨테이너 폭이 0이라 컬럼 폭 계산을 건너뜁니다.
+       탭을 실제로 열 때 applyColWidths()로 폭만 다시 계산합니다.
+       (initColResize() 전체를 다시 부르면 정렬/드래그 리스너가 중복 부착되므로 금지) */
+    if(tab === 'task'){
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        applyColWidths();
+        alignFilterSelToDone();
+      }));
+    }
   }
 }
 
@@ -5801,6 +5811,35 @@ async function optDrop(e, i){
 /* 컬럼 순서 드래그앤드롭 중 여부 — 드래그 후 click(정렬) 실수 실행 방지 */
 let _colDragDragging = false;
 
+/* ============================================================
+   컬럼 폭 적용 — initColResize()와 탭 전환 시 공용으로 사용
+   ★ 측정 기준을 "표 자신"이 아니라 바깥 컨테이너(#taskTableWrap)의
+     clientWidth로 변경. 표 자신을 재면, 이전에 잘못 계산된 컬럼 폭 때문에
+     표가 부풀어 있을 때 그 부푼 값으로 또 계산하는 순환이 생겨서
+     첫 접속 시 폭이 영원히 안 맞는 버그가 있었음.
+     clientWidth는 세로 스크롤바를 제외한 실제 내용 폭이라 정확함.
+============================================================ */
+function applyColWidths(){
+  const wrap = document.getElementById('taskTableWrap');
+  const tbl  = wrap ? wrap.querySelector('table') : null;
+  if(!wrap || !tbl) return;
+  const cols = [...tbl.querySelectorAll('colgroup col')];
+  if(!cols.length) return;
+
+  /* 컨테이너 폭 (숨겨진 상태면 0 → 이때는 건너뜀, 탭 열릴 때 다시 호출됨) */
+  const wrapW = wrap.clientWidth;
+  if(!wrapW) return;
+
+  /* CSS min-width:1929px와 일치하도록 최소 1929 보장 */
+  const tableW = Math.max(wrapW, 1929);
+  const fixedTotal = COL_DEFS.reduce((s,c)=>s+(c[2]||0), 0);
+  const flexPx = Math.max(120, tableW - fixedTotal);
+  cols.forEach((col, i)=>{
+    const defPx = COL_DEFS[i] ? COL_DEFS[i][2] : 0;
+    col.style.width = (defPx === 0 ? flexPx : defPx) + 'px';
+  });
+}
+
 function initColResize(){
   const tbl = document.querySelector('#taskTableWrap table');
   if(!tbl) return;
@@ -5811,8 +5850,7 @@ function initColResize(){
   if(ths.length < 2) return;
 
   /* ---- colgroup 생성 또는 재사용 ----
-     renderTask()가 innerHTML로 표를 새로 그리므로 colgroup도 매번 새로 만듭니다.
-     단, 로컬스토리지에 저장된 폭이 있으면 그걸로 복원합니다. */
+     renderTask()가 innerHTML로 표를 새로 그리므로 colgroup도 매번 새로 만듭니다. */
   let cg = tbl.querySelector('colgroup');
   if(!cg){
     cg = document.createElement('colgroup');
@@ -5826,15 +5864,8 @@ function initColResize(){
   /* requestAnimationFrame 2중 중첩 — 브라우저가 레이아웃을 완전히 계산한 뒤 실행 */
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
-      /* ★ 항상 COL_DEFS의 px 고정값으로 컬럼 폭 설정
-         프로젝트명(값=0)은 다른 컬럼 합산 후 남는 공간 전부 채움 */
-      const tableW = tbl.getBoundingClientRect().width || window.innerWidth;
-      const fixedTotal = COL_DEFS.reduce((s,c)=>s+(c[2]||0), 0);
-      const flexPx = Math.max(120, tableW - fixedTotal);
-      cols.forEach((col, i)=>{
-        const defPx = COL_DEFS[i] ? COL_DEFS[i][2] : 0;
-        col.style.width = (defPx === 0 ? flexPx : defPx) + 'px';
-      });
+      /* ★ 컬럼 폭 적용 (컨테이너 기준 측정 — 위 applyColWidths 참고) */
+      applyColWidths();
 
       /* ---- 정렬 클릭 이벤트 부착 ----
          th에 onclick="" 직접 넣으면 리사이즈 핸들 드래그 후 mouseup 시점에
