@@ -4002,20 +4002,29 @@ function renderBody(){
   }
 
   // 앱을 맨 처음 열었을 때 딱 한 번만, "오늘" 날짜 줄이 표 가운데 오도록 자동 스크롤
-  // ★ scrollIntoView는 문서(페이지) 전체까지 스크롤시켜서 탭바가 헤더 뒤로 숨는 버그가 있었음
-  //   → 표 박스(.grid-wrap) "안에서만" 스크롤하도록 scrollTop 직접 계산 방식으로 교체
+  // 최초 로딩 시 오늘 날짜 행으로 자동 스크롤
   if(!didInitialScroll){
     didInitialScroll = true;
-    setTimeout(() => {
-      const todayStr = toDateStr(TODAY);
-      const row = body.querySelector(`tr[data-date="${todayStr}"]`);
-      const wrap = document.querySelector('#wlTabWeekly .grid-wrap');
-      if(row && wrap){
-        /* 오늘 행이 표 박스의 세로 가운데쯤 오도록 컨테이너 스크롤만 이동 */
-        const target = row.offsetTop - (wrap.clientHeight / 2) + (row.offsetHeight / 2);
-        wrap.scrollTop = Math.max(0, target);
-      }
-    }, 30);
+    setTimeout(scrollToToday, 30);
+  }
+}
+
+/* ============================================================
+   오늘 날짜 행을 표(grid-wrap) 가운데로 스크롤하는 함수
+   - 최초 로딩 시 자동 실행
+   - 주간일지 탭 클릭 시 실행
+   - "오늘" 버튼 클릭 시 실행
+   ★ scrollIntoView 대신 grid-wrap.scrollTop 직접 계산
+     (scrollIntoView는 문서 전체를 스크롤해서 탭바가 숨는 버그 있음)
+============================================================ */
+function scrollToToday(){
+  const todayStr = toDateStr(TODAY);
+  const body = document.getElementById('gridBody');
+  const row = body ? body.querySelector(`tr[data-date="${todayStr}"]`) : null;
+  const wrap = document.querySelector('#wlTabWeekly .grid-wrap');
+  if(row && wrap){
+    const target = row.offsetTop - (wrap.clientHeight / 2) + (row.offsetHeight / 2);
+    wrap.scrollTop = Math.max(0, target);
   }
 }
 
@@ -4343,6 +4352,8 @@ function wlSwitchTab(tab){
   // ※ 상단 4개 탭(.tab) active 표시는 base의 switchTab()이 이미 처리하므로 여기선 건드리지 않음
   document.getElementById('wlTabWeekly').style.display  = tab === 'weekly'  ? '' : 'none';
   document.getElementById('wlTabMonthly').style.display = tab === 'monthly' ? '' : 'none';
+  /* 주간일지 탭 전환 시 오늘 날짜 행으로 자동 스크롤 */
+  if(tab === 'weekly') setTimeout(scrollToToday, 50);
 }
 
 /* ============================================================
@@ -5062,11 +5073,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(currentMonth > 12) { currentMonth = 1; currentYear++; }
     wlRefreshAll();
   });
-  // "오늘" 버튼 - 오늘이 속한 연/월로 즉시 이동
+  // "오늘" 버튼 - 오늘이 속한 연/월로 이동 + 오늘 날짜 행으로 스크롤
   document.getElementById('todayBtn').addEventListener('click', () => {
     currentYear = TODAY.getFullYear();
     currentMonth = TODAY.getMonth() + 1;
-    wlRefreshAll();
+    wlRefreshAll().then(() => setTimeout(scrollToToday, 50));
   });
 
   // "↻ 새로고침" 버튼 - 지금 보고 있는 연/월은 그대로 두고, 서버에서 데이터만 다시 불러옴
